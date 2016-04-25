@@ -1,0 +1,44 @@
+{
+  "name": "habitica-markdown",
+  "version": "0.0.1",
+  "description": "A markdown-it module pre-configured for use in Habitica",
+  "main": "index.js",
+  "scripts": {
+    "build": "node tasks/build.js && npm run minify",
+    "minify": "uglifyjs dist/habitica-markdown.js > dist/habitica-markdown.min.js",
+    "lint": "eslint .",
+    "test": "npm run lint && mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HabitRPG/habitica-markdown.git"
+  },
+  "keywords": [
+    "habitica",
+    "habitrpg",
+    "markdown",
+    "markdown-it"
+  ],
+  "author": "Blade Barringer <blade@crookedneighbor.com>",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/HabitRPG/habitica-markdown/issues"
+  },
+  "homepage": "https://github.com/HabitRPG/habitica-markdown#readme",
+  "devDependencies": {
+    "browserify": "^13.0.0",
+    "chai": "^3.5.0",
+    "chalk": "^1.1.3",
+    "eslint": "^2.8.0",
+    "eslint-config-habitrpg": "^1.1.0",
+    "eslint-plugin-mocha": "^2.2.0",
+    "mocha": "^2.4.5",
+    "rimraf": "^2.5.2",
+    "uglify-js": "^2.6.2"
+  },
+  "dependencies": {
+    "markdown-it": "^6.0.1",
+    "markdown-it-link-target": "^1.0.1",
+    "markdown-it-linkify-images": "^1.0.0"
+  }
+}

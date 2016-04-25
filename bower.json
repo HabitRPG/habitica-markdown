@@ -1,0 +1,22 @@
+{
+  "name": "habitica-markdown",
+  "description": "A pre-configured markdown-it instance for Habitica",
+  "main": "dist/habitica-markdown.js",
+  "authors": [
+    "Blade Barringer <blade@crookedneighbor.com>"
+  ],
+  "license": "MIT",
+  "keywords": [
+    "markdown-it",
+    "markdown",
+    "commonmark"
+  ],
+  "homepage": "https://github.com/habitrpg/habitica-markdown",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "tasks",
+    "examples",
+    "test"
+  ]
+}
