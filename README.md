@@ -17,7 +17,7 @@ md.render('_markdown_ is **awesome**');
 
 In a browser with script tag
 
-```
+```js
 var md = window.habiticaMarkdown;
 md.render('_markdown_ is **awesome**');
 ```
