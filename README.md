@@ -29,3 +29,25 @@ Habitica Markdown comes pre-configured with
 * Raw urls get converted to links with the [linkify setting set to true](https://github.com/markdown-it/markdown-it/#linkify)
 * Links open in new windows with [markdown-it-link-target](https://www.npmjs.com/package/markdown-it-link-target)
 * Images automatically turn into links with [markdown-it-linkify-images](https://www.npmjs.com/package/markdown-it-linkify-images)
+* Markdown parsed by [markdown-it-emoji](https://github.com/markdown-it/markdown-it-emoji)
+
+## Notes
+
+### Emoji
+
+The emoji come pre-styled with:
+
+```css
+.habitica-emoji {
+  height: 1.5em;
+  width: 1.5em;
+}
+```
+
+If you'd like to override these values, you may need to apply the `!important` keyword to your `css`.
+
+```css
+.habitica-emoji {
+  height: 100px !important;
+}
+```
