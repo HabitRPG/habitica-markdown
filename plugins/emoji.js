@@ -3,6 +3,7 @@ var unicode = require('./data/unicode-emoji');
 var vendoredShortcuts = require('./data/shortcut-emoji');
 var specialCases = {
   '+1': '%2B1', // s3 urls can't have a + sign in them, use the html encoded version
+  watch: 'watch-icon', // Firefox renders "watch" as the text `function watch() {[native code]}`. Maybe an Angular issue?
 };
 
 function getShortcuts () {
@@ -34,6 +35,7 @@ function emojiPlugin (md) {
 
     var src = 'https://s3.amazonaws.com/habitica-assets/cdn/emoji/' + emoji + '.png';
     var style = 'height: 1.5em; width: 1.5em';
+
     return '<img class="habitica-emoji" style="' + style + '" src="' + src + '" alt="' + emoji + '">';
   };
 }
