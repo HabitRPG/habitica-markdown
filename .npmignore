@@ -5,3 +5,5 @@ examples
 bower.json
 .mversionrc
 .eslintrc
+.eslintignore
+*.log*
