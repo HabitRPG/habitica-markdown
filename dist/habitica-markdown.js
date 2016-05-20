@@ -625,13 +625,18 @@ module.exports = function parseEmoji (emoji) {
 var unicode = require('markdown-it-emoji/lib/data/full.json');
 var vendoredShortcuts = require('markdown-it-emoji/lib/data/shortcuts.js');
 
-var shortcuts = JSON.parse(JSON.stringify(unicode));
+var shortcuts = {};
 
-Object.keys(vendoredShortcuts).forEach(function appendShortcuts (key) {
-  shortcuts[key] = shortcuts[key] || [];
+function addValues (set) {
+  Object.keys(set).forEach(function addKey (key) {
+    shortcuts[key] = shortcuts[key] || [];
 
-  shortcuts[key] = shortcuts[key].concat(vendoredShortcuts[key]);
-});
+    shortcuts[key] = shortcuts[key].concat(set[key]);
+  });
+}
+
+addValues(unicode);
+addValues(vendoredShortcuts);
 
 module.exports = shortcuts;
 
