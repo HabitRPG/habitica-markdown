@@ -6,4 +6,5 @@ bower.json
 .mversionrc
 .eslintrc
 .eslintignore
+.travis.yml
 *.log*
