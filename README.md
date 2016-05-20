@@ -29,7 +29,7 @@ Habitica Markdown comes pre-configured with
 * Raw urls get converted to links with the [linkify setting set to true](https://github.com/markdown-it/markdown-it/#linkify)
 * Links open in new windows with [markdown-it-link-target](https://www.npmjs.com/package/markdown-it-link-target)
 * Images automatically turn into links with [markdown-it-linkify-images](https://www.npmjs.com/package/markdown-it-linkify-images)
-* Markdown parsed by [markdown-it-emoji](https://github.com/markdown-it/markdown-it-emoji)
+* Emojis parsed by [habitica-markdown-emoji](https://www.npmjs.com/package/habitica-markdown-emoji)
 
 ## Notes
 

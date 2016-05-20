@@ -3,7 +3,7 @@
 var markdownit = require('markdown-it');
 var linkifyImagesPlugin = require('markdown-it-linkify-images');
 var linkTargetPlugin = require('markdown-it-link-target');
-var emojiPlugin = require('./plugins/emoji');
+var emojiPlugin = require('habitica-markdown-emoji');
 
 var md = markdownit({
   linkify: true,
