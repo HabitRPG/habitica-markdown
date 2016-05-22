@@ -4,7 +4,7 @@
   "description": "A markdown-it module pre-configured for use in Habitica",
   "main": "index.js",
   "scripts": {
-    "build": "node tasks/build.js && npm run minify",
+    "build": "npm install --force && node tasks/build.js && npm run minify",
     "minify": "uglifyjs dist/habitica-markdown.js > dist/habitica-markdown.min.js",
     "lint": "eslint .",
     "test": "npm run lint && mocha"
