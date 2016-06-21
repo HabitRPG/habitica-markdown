@@ -38,7 +38,7 @@
   },
   "dependencies": {
     "habitica-markdown-emoji": "1.2.3",
-    "markdown-it": "6.1.0",
+    "markdown-it": "6.1.1",
     "markdown-it-link-target": "1.0.1",
     "markdown-it-linkify-images": "1.0.0"
   }
