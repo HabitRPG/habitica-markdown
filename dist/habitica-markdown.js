@@ -77,8 +77,33 @@ module.exports = emojis;
 'use strict';
 
 var specialCases = {
-  '+1': '%2B1', // s3 urls can't have a + sign in them, use the html encoded version
   watch: 'watch-icon', // Firefox has a watch function on the object prototype - see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/watch
+
+  '+1': 'thumbsup', // NOTE: s3 urls can't have a + sign in them, so if we ever reverse this, keep that in mind
+  '-1': 'thumbsdown',
+  boat: 'sailboat',
+  book: 'open_book',
+  boom: 'collision',
+  car: 'red_car',
+  couple: 'man_and_woman_holding_hands',
+  email: 'envelope',
+  exclamation: 'heavy_exclamation_mark',
+  facepunch: 'punch',
+  family: 'man-woman-boy',
+  feet: 'paw_prints',
+  flipper: 'dolphin',
+  hand: 'raised_hand',
+  hankey: 'poop',
+  hocho: 'knife',
+  honeybee: 'bee',
+  lantern: 'izakaya_lantern',
+  laughing: 'satisfied',
+  memo: 'pencil',
+  moon: 'waxing_gibbous_moon',
+  phone: 'telephone',
+  running: 'runner',
+  shit: 'poop',
+  uk: 'gb',
 };
 
 module.exports = function parseEmoji (emoji) {
@@ -188,15 +213,25 @@ var defaultSchemas = {
       var tail = text.slice(pos);
 
       if (!self.re.no_http) {
-      // compile lazily, becayse "host"-containing variables can change on tlds update.
+      // compile lazily, because "host"-containing variables can change on tlds update.
         self.re.no_http =  new RegExp(
-          '^' + self.re.src_auth + self.re.src_host_port_strict + self.re.src_path, 'i'
+          '^' +
+          self.re.src_auth +
+          // Don't allow single-level domains, because of false positives like '//test'
+          // with code comments
+          '(?:localhost|(?:(?:' + self.re.src_domain + ')\\.)+' + self.re.src_domain_root + ')' +
+          self.re.src_port +
+          self.re.src_host_terminator +
+          self.re.src_path,
+
+          'i'
         );
       }
 
       if (self.re.no_http.test(tail)) {
-        // should not be `://`, that protects from errors in protocol name
+        // should not be `://` & `///`, that protects from errors in protocol name
         if (pos >= 3 && text[pos - 3] === ':') { return 0; }
+        if (pos >= 3 && text[pos - 3] === '/') { return 0; }
         return tail.match(self.re.no_http)[0].length;
       }
       return 0;
@@ -360,8 +395,8 @@ function compile(self) {
                       .map(escapeRE)
                       .join('|');
   // (?!_) cause 1.5x slowdown
-  self.re.schema_test   = RegExp('(^|(?!_)(?:>|' + re.src_ZPCc + '))(' + slist + ')', 'i');
-  self.re.schema_search = RegExp('(^|(?!_)(?:>|' + re.src_ZPCc + '))(' + slist + ')', 'ig');
+  self.re.schema_test   = RegExp('(^|(?!_)(?:[><]|' + re.src_ZPCc + '))(' + slist + ')', 'i');
+  self.re.schema_search = RegExp('(^|(?!_)(?:[><]|' + re.src_ZPCc + '))(' + slist + ')', 'ig');
 
   self.re.pretest       = RegExp(
                             '(' + self.re.schema_test.source + ')|' +
@@ -751,9 +786,9 @@ var src_ZCc = exports.src_ZCc = [ src_Z, src_Cc ].join('|');
 // All possible word characters (everything without punctuation, spaces & controls)
 // Defined via punctuation & spaces to save space
 // Should be something like \p{\L\N\S\M} (\w but without `_`)
-var src_pseudo_letter       = '(?:(?!' + src_ZPCc + ')' + src_Any + ')';
+var src_pseudo_letter       = '(?:(?!>|<|' + src_ZPCc + ')' + src_Any + ')';
 // The same as abothe but without [0-9]
-var src_pseudo_letter_non_d = '(?:(?![0-9]|' + src_ZPCc + ')' + src_Any + ')';
+// var src_pseudo_letter_non_d = '(?:(?![0-9]|' + src_ZPCc + ')' + src_Any + ')';
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -761,7 +796,8 @@ var src_ip4 = exports.src_ip4 =
 
   '(?:(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)';
 
-exports.src_auth    = '(?:(?:(?!' + src_ZCc + ').)+@)?';
+// Prohibit [@/] in user/pass to avoid wrong domain fetch.
+exports.src_auth    = '(?:(?:(?!' + src_ZCc + '|[@/]).)+@)?';
 
 var src_port = exports.src_port =
 
@@ -769,14 +805,14 @@ var src_port = exports.src_port =
 
 var src_host_terminator = exports.src_host_terminator =
 
-  '(?=$|' + src_ZPCc + ')(?!-|_|:\\d|\\.-|\\.(?!$|' + src_ZPCc + '))';
+  '(?=$|>|<|' + src_ZPCc + ')(?!-|_|:\\d|\\.-|\\.(?!$|' + src_ZPCc + '))';
 
 var src_path = exports.src_path =
 
   '(?:' +
     '[/?#]' +
       '(?:' +
-        '(?!' + src_ZCc + '|[()[\\]{}.,"\'?!\\-]).|' +
+        '(?!' + src_ZCc + '|[()[\\]{}.,"\'?!\\-<>]).|' +
         '\\[(?:(?!' + src_ZCc + '|\\]).)*\\]|' +
         '\\((?:(?!' + src_ZCc + '|[)]).)*\\)|' +
         '\\{(?:(?!' + src_ZCc + '|[}]).)*\\}|' +
@@ -810,11 +846,11 @@ var src_xn = exports.src_xn =
 
 var src_domain_root = exports.src_domain_root =
 
-  // Can't have digits and dashes
+  // Allow letters & digits (http://test1)
   '(?:' +
     src_xn +
     '|' +
-    src_pseudo_letter_non_d + '{1,63}' +
+    src_pseudo_letter + '{1,63}' +
   ')';
 
 var src_domain = exports.src_domain =
@@ -833,8 +869,9 @@ var src_domain = exports.src_domain =
 var src_host = exports.src_host =
 
   '(?:' +
-    src_ip4 +
-  '|' +
+  // Don't need IP check, because digits are already allowed in normal domain names
+  //   src_ip4 +
+  // '|' +
     '(?:(?:(?:' + src_domain + ')\\.)*' + src_domain_root + ')' +
   ')';
 
@@ -877,11 +914,11 @@ var tpl_host_port_no_ip_fuzzy_strict = exports.tpl_host_port_no_ip_fuzzy_strict 
 // Rude test fuzzy links by host, for quick deny
 exports.tpl_host_fuzzy_test =
 
-  'localhost|\\.\\d{1,3}\\.|(?:\\.(?:%TLDS%)(?:' + src_ZPCc + '|$))';
+  'localhost|www\\.|\\.\\d{1,3}\\.|(?:\\.(?:%TLDS%)(?:' + src_ZPCc + '|>|$))';
 
 exports.tpl_email_fuzzy =
 
-    '(^|>|\\(|' + src_ZCc + ')(' + src_email_name + '@' + tpl_host_fuzzy_strict + ')';
+    '(^|<|>|\\(|' + src_ZCc + ')(' + src_email_name + '@' + tpl_host_fuzzy_strict + ')';
 
 exports.tpl_link_fuzzy =
     // Fuzzy link can't be prepended with .:/\- and non punctuation.
@@ -3806,13 +3843,23 @@ var escapeHtml      = require('./common/utils').escapeHtml;
 var default_rules = {};
 
 
-default_rules.code_inline = function (tokens, idx /*, options, env */) {
-  return '<code>' + escapeHtml(tokens[idx].content) + '</code>';
+default_rules.code_inline = function (tokens, idx, options, env, slf) {
+  var token = tokens[idx],
+      attrs = slf.renderAttrs(token);
+
+  return  '<code' + (attrs ? ' ' + attrs : '') + '>' +
+          escapeHtml(tokens[idx].content) +
+          '</code>';
 };
 
 
-default_rules.code_block = function (tokens, idx /*, options, env */) {
-  return '<pre><code>' + escapeHtml(tokens[idx].content) + '</code></pre>\n';
+default_rules.code_block = function (tokens, idx, options, env, slf) {
+  var token = tokens[idx],
+      attrs = slf.renderAttrs(token);
+
+  return  '<pre' + (attrs ? ' ' + attrs : '') + '><code>' +
+          escapeHtml(tokens[idx].content) +
+          '</code></pre>\n';
 };
 
 
@@ -3820,11 +3867,10 @@ default_rules.fence = function (tokens, idx, options, env, slf) {
   var token = tokens[idx],
       info = token.info ? unescapeAll(token.info).trim() : '',
       langName = '',
-      highlighted;
+      highlighted, i, tmpAttrs, tmpToken;
 
   if (info) {
     langName = info.split(/\s+/g)[0];
-    token.attrJoin('class', options.langPrefix + langName);
   }
 
   if (options.highlight) {
@@ -3836,6 +3882,30 @@ default_rules.fence = function (tokens, idx, options, env, slf) {
   if (highlighted.indexOf('<pre') === 0) {
     return highlighted + '\n';
   }
+
+  // If language exists, inject class gently, without mudofying original token.
+  // May be, one day we will add .clone() for token and simplify this part, but
+  // now we prefer to keep things local.
+  if (info) {
+    i        = token.attrIndex('class');
+    tmpAttrs = token.attrs ? token.attrs.slice() : [];
+
+    if (i < 0) {
+      tmpAttrs.push([ 'class', options.langPrefix + langName ]);
+    } else {
+      tmpAttrs[i] += ' ' + options.langPrefix + langName;
+    }
+
+    // Fake token just to render attributes
+    tmpToken = {
+      attrs: tmpAttrs
+    };
+
+    return  '<pre><code' + slf.renderAttrs(tmpToken) + '>'
+          + highlighted
+          + '</code></pre>\n';
+  }
+
 
   return  '<pre><code' + slf.renderAttrs(token) + '>'
         + highlighted
@@ -6121,7 +6191,7 @@ module.exports = function linkify(state) {
 'use strict';
 
 
-var NEWLINES_RE  = /\r[\n\u0085]|[\u2424\u2028\u0085]/g;
+var NEWLINES_RE  = /\r[\n\u0085]?|[\u2424\u2028\u0085]/g;
 var NULL_RE      = /\u0000/g;
 
 
@@ -7771,6 +7841,20 @@ Token.prototype.attrSet = function attrSet(name, value) {
 
 
 /**
+ * Token.attrGet(name)
+ *
+ * Get the value of attribute `name`, or null if it does not exist.
+ **/
+Token.prototype.attrGet = function attrGet(name) {
+  var idx = this.attrIndex(name), value = null;
+  if (idx >= 0) {
+    value = this.attrs[idx][1];
+  }
+  return value;
+};
+
+
+/**
  * Token.attrJoin(name, value)
  *
  * Join value to existing attribute via space. Or create new attribute if not
@@ -8905,9 +8989,9 @@ module.exports=/[\0-\x1F\x7F-\x9F]/
 },{}],76:[function(require,module,exports){
 module.exports=/[\xAD\u0600-\u0605\u061C\u06DD\u070F\u180E\u200B-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u206F\uFEFF\uFFF9-\uFFFB]|\uD804\uDCBD|\uD82F[\uDCA0-\uDCA3]|\uD834[\uDD73-\uDD7A]|\uDB40[\uDC01\uDC20-\uDC7F]/
 },{}],77:[function(require,module,exports){
-module.exports=/[!-#%-\*,-/:;\?@\[-\]_\{\}\xA1\xA7\xAB\xB6\xB7\xBB\xBF\u037E\u0387\u055A-\u055F\u0589\u058A\u05BE\u05C0\u05C3\u05C6\u05F3\u05F4\u0609\u060A\u060C\u060D\u061B\u061E\u061F\u066A-\u066D\u06D4\u0700-\u070D\u07F7-\u07F9\u0830-\u083E\u085E\u0964\u0965\u0970\u0AF0\u0DF4\u0E4F\u0E5A\u0E5B\u0F04-\u0F12\u0F14\u0F3A-\u0F3D\u0F85\u0FD0-\u0FD4\u0FD9\u0FDA\u104A-\u104F\u10FB\u1360-\u1368\u1400\u166D\u166E\u169B\u169C\u16EB-\u16ED\u1735\u1736\u17D4-\u17D6\u17D8-\u17DA\u1800-\u180A\u1944\u1945\u1A1E\u1A1F\u1AA0-\u1AA6\u1AA8-\u1AAD\u1B5A-\u1B60\u1BFC-\u1BFF\u1C3B-\u1C3F\u1C7E\u1C7F\u1CC0-\u1CC7\u1CD3\u2010-\u2027\u2030-\u2043\u2045-\u2051\u2053-\u205E\u207D\u207E\u208D\u208E\u2308-\u230B\u2329\u232A\u2768-\u2775\u27C5\u27C6\u27E6-\u27EF\u2983-\u2998\u29D8-\u29DB\u29FC\u29FD\u2CF9-\u2CFC\u2CFE\u2CFF\u2D70\u2E00-\u2E2E\u2E30-\u2E42\u3001-\u3003\u3008-\u3011\u3014-\u301F\u3030\u303D\u30A0\u30FB\uA4FE\uA4FF\uA60D-\uA60F\uA673\uA67E\uA6F2-\uA6F7\uA874-\uA877\uA8CE\uA8CF\uA8F8-\uA8FA\uA92E\uA92F\uA95F\uA9C1-\uA9CD\uA9DE\uA9DF\uAA5C-\uAA5F\uAADE\uAADF\uAAF0\uAAF1\uABEB\uFD3E\uFD3F\uFE10-\uFE19\uFE30-\uFE52\uFE54-\uFE61\uFE63\uFE68\uFE6A\uFE6B\uFF01-\uFF03\uFF05-\uFF0A\uFF0C-\uFF0F\uFF1A\uFF1B\uFF1F\uFF20\uFF3B-\uFF3D\uFF3F\uFF5B\uFF5D\uFF5F-\uFF65]|\uD800[\uDD00-\uDD02\uDF9F\uDFD0]|\uD801\uDD6F|\uD802[\uDC57\uDD1F\uDD3F\uDE50-\uDE58\uDE7F\uDEF0-\uDEF6\uDF39-\uDF3F\uDF99-\uDF9C]|\uD804[\uDC47-\uDC4D\uDCBB\uDCBC\uDCBE-\uDCC1\uDD40-\uDD43\uDD74\uDD75\uDDC5-\uDDC8\uDDCD\uDE38-\uDE3D]|\uD805[\uDCC6\uDDC1-\uDDC9\uDE41-\uDE43]|\uD809[\uDC70-\uDC74]|\uD81A[\uDE6E\uDE6F\uDEF5\uDF37-\uDF3B\uDF44]|\uD82F\uDC9F/
+module.exports=/[!-#%-\*,-/:;\?@\[-\]_\{\}\xA1\xA7\xAB\xB6\xB7\xBB\xBF\u037E\u0387\u055A-\u055F\u0589\u058A\u05BE\u05C0\u05C3\u05C6\u05F3\u05F4\u0609\u060A\u060C\u060D\u061B\u061E\u061F\u066A-\u066D\u06D4\u0700-\u070D\u07F7-\u07F9\u0830-\u083E\u085E\u0964\u0965\u0970\u0AF0\u0DF4\u0E4F\u0E5A\u0E5B\u0F04-\u0F12\u0F14\u0F3A-\u0F3D\u0F85\u0FD0-\u0FD4\u0FD9\u0FDA\u104A-\u104F\u10FB\u1360-\u1368\u1400\u166D\u166E\u169B\u169C\u16EB-\u16ED\u1735\u1736\u17D4-\u17D6\u17D8-\u17DA\u1800-\u180A\u1944\u1945\u1A1E\u1A1F\u1AA0-\u1AA6\u1AA8-\u1AAD\u1B5A-\u1B60\u1BFC-\u1BFF\u1C3B-\u1C3F\u1C7E\u1C7F\u1CC0-\u1CC7\u1CD3\u2010-\u2027\u2030-\u2043\u2045-\u2051\u2053-\u205E\u207D\u207E\u208D\u208E\u2308-\u230B\u2329\u232A\u2768-\u2775\u27C5\u27C6\u27E6-\u27EF\u2983-\u2998\u29D8-\u29DB\u29FC\u29FD\u2CF9-\u2CFC\u2CFE\u2CFF\u2D70\u2E00-\u2E2E\u2E30-\u2E42\u3001-\u3003\u3008-\u3011\u3014-\u301F\u3030\u303D\u30A0\u30FB\uA4FE\uA4FF\uA60D-\uA60F\uA673\uA67E\uA6F2-\uA6F7\uA874-\uA877\uA8CE\uA8CF\uA8F8-\uA8FA\uA8FC\uA92E\uA92F\uA95F\uA9C1-\uA9CD\uA9DE\uA9DF\uAA5C-\uAA5F\uAADE\uAADF\uAAF0\uAAF1\uABEB\uFD3E\uFD3F\uFE10-\uFE19\uFE30-\uFE52\uFE54-\uFE61\uFE63\uFE68\uFE6A\uFE6B\uFF01-\uFF03\uFF05-\uFF0A\uFF0C-\uFF0F\uFF1A\uFF1B\uFF1F\uFF20\uFF3B-\uFF3D\uFF3F\uFF5B\uFF5D\uFF5F-\uFF65]|\uD800[\uDD00-\uDD02\uDF9F\uDFD0]|\uD801\uDD6F|\uD802[\uDC57\uDD1F\uDD3F\uDE50-\uDE58\uDE7F\uDEF0-\uDEF6\uDF39-\uDF3F\uDF99-\uDF9C]|\uD804[\uDC47-\uDC4D\uDCBB\uDCBC\uDCBE-\uDCC1\uDD40-\uDD43\uDD74\uDD75\uDDC5-\uDDC9\uDDCD\uDDDB\uDDDD-\uDDDF\uDE38-\uDE3D\uDEA9]|\uD805[\uDCC6\uDDC1-\uDDD7\uDE41-\uDE43\uDF3C-\uDF3E]|\uD809[\uDC70-\uDC74]|\uD81A[\uDE6E\uDE6F\uDEF5\uDF37-\uDF3B\uDF44]|\uD82F\uDC9F|\uD836[\uDE87-\uDE8B]/
 },{}],78:[function(require,module,exports){
-module.exports=/[ \xA0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000]/
+module.exports=/[ \xA0\u1680\u2000-\u200A\u202F\u205F\u3000]/
 },{}],79:[function(require,module,exports){
 
 module.exports.Any = require('./properties/Any/regex');
@@ -8917,6 +9001,6 @@ module.exports.P   = require('./categories/P/regex');
 module.exports.Z   = require('./categories/Z/regex');
 
 },{"./categories/Cc/regex":75,"./categories/Cf/regex":76,"./categories/P/regex":77,"./categories/Z/regex":78,"./properties/Any/regex":80}],80:[function(require,module,exports){
-module.exports=/[\0-\uD7FF\uDC00-\uFFFF]|[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDBFF]/
+module.exports=/[\0-\uD7FF\uE000-\uFFFF]|[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF]/
 },{}]},{},[1])(1)
 });
