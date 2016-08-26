@@ -4,10 +4,10 @@ require('./helper');
 let md = require('../');
 
 describe('Habitica Markdown', function () {
-  it('renders links with target="_blank"', function () {
+  it('renders links with target="_blank" and rel="noopener"', function () {
     let result = md.render('[link](https://example.com)');
 
-    expect(result).to.contain('<a href="https://example.com" target="_blank">link</a>');
+    expect(result).to.contain('<a href="https://example.com" target="_blank" rel="noopener">link</a>');
   });
 
   it('renders images with links and classes', function () {
