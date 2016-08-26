@@ -1,6 +1,6 @@
 {
   "name": "habitica-markdown",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "A markdown-it module pre-configured for use in Habitica",
   "main": "index.js",
   "scripts": {
