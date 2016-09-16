@@ -6,19 +6,33 @@ var linkifyImagesPlugin = require('markdown-it-linkify-images');
 var linkAttributesPlugin = require('markdown-it-link-attributes');
 var emojiPlugin = require('habitica-markdown-emoji');
 
-var md = markdownit({
-  linkify: true,
-})
-.use(linkAttributesPlugin, {
-  target: '_blank',
-  rel: 'noopener',
-})
-.use(linkifyImagesPlugin, {
-  target: '_blank',
-  linkClass: 'markdown-img-link',
-  imgClass: 'markdown-img',
-})
-.use(emojiPlugin);
+function createMdInstance (options) {
+  options = options || {};
+  options.linkify = options.linkify || true;
+
+  var md = markdownit(options)
+    .use(linkAttributesPlugin, {
+      target: '_blank',
+      rel: 'noopener',
+    })
+    .use(linkifyImagesPlugin, {
+      target: '_blank',
+      linkClass: 'markdown-img-link',
+      imgClass: 'markdown-img',
+    })
+    .use(emojiPlugin);
+
+  return md;
+}
+
+var md = createMdInstance();
+var mdUnsafe = createMdInstance({
+  html: true,
+});
+
+md.unsafeHTMLRender = function unsafeHTMLRender (markdown) {
+  return mdUnsafe.render(markdown);
+};
 
 module.exports = md;
 
@@ -296,10 +310,12 @@ function createNormalizer() {
 function compile(self) {
 
   // Load & clone RE patterns.
-  var re = self.re = assign({}, require('./lib/re'));
+  var re = self.re = require('./lib/re')(self.__opts__);
 
   // Define dynamic patterns
   var tlds = self.__tlds__.slice();
+
+  self.onCompile();
 
   if (!self.__tlds_replaced__) {
     tlds.push(tlds_2ch_src_re);
@@ -769,171 +785,191 @@ LinkifyIt.prototype.normalize = function normalize(match) {
 };
 
 
+/**
+ * LinkifyIt#onCompile()
+ *
+ * Override to modify basic RegExp-s.
+ **/
+LinkifyIt.prototype.onCompile = function onCompile() {
+};
+
+
 module.exports = LinkifyIt;
 
 },{"./lib/re":8}],8:[function(require,module,exports){
 'use strict';
 
-// Use direct extract instead of `regenerate` to reduse browserified size
-var src_Any = exports.src_Any = require('uc.micro/properties/Any/regex').source;
-var src_Cc  = exports.src_Cc = require('uc.micro/categories/Cc/regex').source;
-var src_Z   = exports.src_Z  = require('uc.micro/categories/Z/regex').source;
-var src_P   = exports.src_P  = require('uc.micro/categories/P/regex').source;
 
-// \p{\Z\P\Cc\CF} (white spaces + control + format + punctuation)
-var src_ZPCc = exports.src_ZPCc = [ src_Z, src_P, src_Cc ].join('|');
+module.exports = function (opts) {
+  var re = {};
 
-// \p{\Z\Cc} (white spaces + control)
-var src_ZCc = exports.src_ZCc = [ src_Z, src_Cc ].join('|');
+  // Use direct extract instead of `regenerate` to reduse browserified size
+  re.src_Any = require('uc.micro/properties/Any/regex').source;
+  re.src_Cc  = require('uc.micro/categories/Cc/regex').source;
+  re.src_Z   = require('uc.micro/categories/Z/regex').source;
+  re.src_P   = require('uc.micro/categories/P/regex').source;
 
-// All possible word characters (everything without punctuation, spaces & controls)
-// Defined via punctuation & spaces to save space
-// Should be something like \p{\L\N\S\M} (\w but without `_`)
-var src_pseudo_letter       = '(?:(?!>|<|' + src_ZPCc + ')' + src_Any + ')';
-// The same as abothe but without [0-9]
-// var src_pseudo_letter_non_d = '(?:(?![0-9]|' + src_ZPCc + ')' + src_Any + ')';
+  // \p{\Z\P\Cc\CF} (white spaces + control + format + punctuation)
+  re.src_ZPCc = [ re.src_Z, re.src_P, re.src_Cc ].join('|');
 
-////////////////////////////////////////////////////////////////////////////////
+  // \p{\Z\Cc} (white spaces + control)
+  re.src_ZCc = [ re.src_Z, re.src_Cc ].join('|');
 
-var src_ip4 = exports.src_ip4 =
+  // All possible word characters (everything without punctuation, spaces & controls)
+  // Defined via punctuation & spaces to save space
+  // Should be something like \p{\L\N\S\M} (\w but without `_`)
+  re.src_pseudo_letter       = '(?:(?!>|<|' + re.src_ZPCc + ')' + re.src_Any + ')';
+  // The same as abothe but without [0-9]
+  // var src_pseudo_letter_non_d = '(?:(?![0-9]|' + src_ZPCc + ')' + src_Any + ')';
 
-  '(?:(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)';
+  ////////////////////////////////////////////////////////////////////////////////
 
-// Prohibit [@/] in user/pass to avoid wrong domain fetch.
-exports.src_auth    = '(?:(?:(?!' + src_ZCc + '|[@/]).)+@)?';
+  re.src_ip4 =
 
-var src_port = exports.src_port =
+    '(?:(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)';
 
-  '(?::(?:6(?:[0-4]\\d{3}|5(?:[0-4]\\d{2}|5(?:[0-2]\\d|3[0-5])))|[1-5]?\\d{1,4}))?';
+  // Prohibit [@/] in user/pass to avoid wrong domain fetch.
+  re.src_auth    = '(?:(?:(?!' + re.src_ZCc + '|[@/]).)+@)?';
 
-var src_host_terminator = exports.src_host_terminator =
+  re.src_port =
 
-  '(?=$|>|<|' + src_ZPCc + ')(?!-|_|:\\d|\\.-|\\.(?!$|' + src_ZPCc + '))';
+    '(?::(?:6(?:[0-4]\\d{3}|5(?:[0-4]\\d{2}|5(?:[0-2]\\d|3[0-5])))|[1-5]?\\d{1,4}))?';
 
-var src_path = exports.src_path =
+  re.src_host_terminator =
 
-  '(?:' +
-    '[/?#]' +
-      '(?:' +
-        '(?!' + src_ZCc + '|[()[\\]{}.,"\'?!\\-<>]).|' +
-        '\\[(?:(?!' + src_ZCc + '|\\]).)*\\]|' +
-        '\\((?:(?!' + src_ZCc + '|[)]).)*\\)|' +
-        '\\{(?:(?!' + src_ZCc + '|[}]).)*\\}|' +
-        '\\"(?:(?!' + src_ZCc + '|["]).)+\\"|' +
-        "\\'(?:(?!" + src_ZCc + "|[']).)+\\'|" +
-        "\\'(?=" + src_pseudo_letter + ').|' +  // allow `I'm_king` if no pair found
-        '\\.{2,3}[a-zA-Z0-9%/]|' + // github has ... in commit range links. Restrict to
-                                   // - english
-                                   // - percent-encoded
-                                   // - parts of file path
-                                   // until more examples found.
-        '\\.(?!' + src_ZCc + '|[.]).|' +
-        '\\-(?!--(?:[^-]|$))(?:-*)|' +  // `---` => long dash, terminate
-        '\\,(?!' + src_ZCc + ').|' +      // allow `,,,` in paths
-        '\\!(?!' + src_ZCc + '|[!]).|' +
-        '\\?(?!' + src_ZCc + '|[?]).' +
-      ')+' +
-    '|\\/' +
-  ')?';
+    '(?=$|>|<|' + re.src_ZPCc + ')(?!-|_|:\\d|\\.-|\\.(?!$|' + re.src_ZPCc + '))';
 
-var src_email_name = exports.src_email_name =
+  re.src_path =
 
-  '[\\-;:&=\\+\\$,\\"\\.a-zA-Z0-9_]+';
+    '(?:' +
+      '[/?#]' +
+        '(?:' +
+          '(?!' + re.src_ZCc + '|[()[\\]{}.,"\'?!\\-<>]).|' +
+          '\\[(?:(?!' + re.src_ZCc + '|\\]).)*\\]|' +
+          '\\((?:(?!' + re.src_ZCc + '|[)]).)*\\)|' +
+          '\\{(?:(?!' + re.src_ZCc + '|[}]).)*\\}|' +
+          '\\"(?:(?!' + re.src_ZCc + '|["]).)+\\"|' +
+          "\\'(?:(?!" + re.src_ZCc + "|[']).)+\\'|" +
+          "\\'(?=" + re.src_pseudo_letter + '|[-]).|' +  // allow `I'm_king` if no pair found
+          '\\.{2,3}[a-zA-Z0-9%/]|' + // github has ... in commit range links. Restrict to
+                                     // - english
+                                     // - percent-encoded
+                                     // - parts of file path
+                                     // until more examples found.
+          '\\.(?!' + re.src_ZCc + '|[.]).|' +
+          (opts && opts['---'] ?
+            '\\-(?!--(?:[^-]|$))(?:-*)|' // `---` => long dash, terminate
+          :
+            '\\-+|'
+          ) +
+          '\\,(?!' + re.src_ZCc + ').|' +      // allow `,,,` in paths
+          '\\!(?!' + re.src_ZCc + '|[!]).|' +
+          '\\?(?!' + re.src_ZCc + '|[?]).' +
+        ')+' +
+      '|\\/' +
+    ')?';
 
-var src_xn = exports.src_xn =
+  re.src_email_name =
 
-  'xn--[a-z0-9\\-]{1,59}';
+    '[\\-;:&=\\+\\$,\\"\\.a-zA-Z0-9_]+';
 
-// More to read about domain names
-// http://serverfault.com/questions/638260/
+  re.src_xn =
 
-var src_domain_root = exports.src_domain_root =
+    'xn--[a-z0-9\\-]{1,59}';
 
-  // Allow letters & digits (http://test1)
-  '(?:' +
-    src_xn +
+  // More to read about domain names
+  // http://serverfault.com/questions/638260/
+
+  re.src_domain_root =
+
+    // Allow letters & digits (http://test1)
+    '(?:' +
+      re.src_xn +
+      '|' +
+      re.src_pseudo_letter + '{1,63}' +
+    ')';
+
+  re.src_domain =
+
+    '(?:' +
+      re.src_xn +
+      '|' +
+      '(?:' + re.src_pseudo_letter + ')' +
+      '|' +
+      // don't allow `--` in domain names, because:
+      // - that can conflict with markdown &mdash; / &ndash;
+      // - nobody use those anyway
+      '(?:' + re.src_pseudo_letter + '(?:-(?!-)|' + re.src_pseudo_letter + '){0,61}' + re.src_pseudo_letter + ')' +
+    ')';
+
+  re.src_host =
+
+    '(?:' +
+    // Don't need IP check, because digits are already allowed in normal domain names
+    //   src_ip4 +
+    // '|' +
+      '(?:(?:(?:' + re.src_domain + ')\\.)*' + re.src_domain_root + ')' +
+    ')';
+
+  re.tpl_host_fuzzy =
+
+    '(?:' +
+      re.src_ip4 +
     '|' +
-    src_pseudo_letter + '{1,63}' +
-  ')';
+      '(?:(?:(?:' + re.src_domain + ')\\.)+(?:%TLDS%))' +
+    ')';
 
-var src_domain = exports.src_domain =
+  re.tpl_host_no_ip_fuzzy =
 
-  '(?:' +
-    src_xn +
-    '|' +
-    '(?:' + src_pseudo_letter + ')' +
-    '|' +
-    // don't allow `--` in domain names, because:
-    // - that can conflict with markdown &mdash; / &ndash;
-    // - nobody use those anyway
-    '(?:' + src_pseudo_letter + '(?:-(?!-)|' + src_pseudo_letter + '){0,61}' + src_pseudo_letter + ')' +
-  ')';
+    '(?:(?:(?:' + re.src_domain + ')\\.)+(?:%TLDS%))';
 
-var src_host = exports.src_host =
+  re.src_host_strict =
 
-  '(?:' +
-  // Don't need IP check, because digits are already allowed in normal domain names
-  //   src_ip4 +
-  // '|' +
-    '(?:(?:(?:' + src_domain + ')\\.)*' + src_domain_root + ')' +
-  ')';
+    re.src_host + re.src_host_terminator;
 
-var tpl_host_fuzzy = exports.tpl_host_fuzzy =
+  re.tpl_host_fuzzy_strict =
 
-  '(?:' +
-    src_ip4 +
-  '|' +
-    '(?:(?:(?:' + src_domain + ')\\.)+(?:%TLDS%))' +
-  ')';
+    re.tpl_host_fuzzy + re.src_host_terminator;
 
-var tpl_host_no_ip_fuzzy = exports.tpl_host_no_ip_fuzzy =
+  re.src_host_port_strict =
 
-  '(?:(?:(?:' + src_domain + ')\\.)+(?:%TLDS%))';
+    re.src_host + re.src_port + re.src_host_terminator;
 
-exports.src_host_strict =
+  re.tpl_host_port_fuzzy_strict =
 
-  src_host + src_host_terminator;
+    re.tpl_host_fuzzy + re.src_port + re.src_host_terminator;
 
-var tpl_host_fuzzy_strict = exports.tpl_host_fuzzy_strict =
+  re.tpl_host_port_no_ip_fuzzy_strict =
 
-  tpl_host_fuzzy + src_host_terminator;
-
-exports.src_host_port_strict =
-
-  src_host + src_port + src_host_terminator;
-
-var tpl_host_port_fuzzy_strict = exports.tpl_host_port_fuzzy_strict =
-
-  tpl_host_fuzzy + src_port + src_host_terminator;
-
-var tpl_host_port_no_ip_fuzzy_strict = exports.tpl_host_port_no_ip_fuzzy_strict =
-
-  tpl_host_no_ip_fuzzy + src_port + src_host_terminator;
+    re.tpl_host_no_ip_fuzzy + re.src_port + re.src_host_terminator;
 
 
-////////////////////////////////////////////////////////////////////////////////
-// Main rules
+  ////////////////////////////////////////////////////////////////////////////////
+  // Main rules
 
-// Rude test fuzzy links by host, for quick deny
-exports.tpl_host_fuzzy_test =
+  // Rude test fuzzy links by host, for quick deny
+  re.tpl_host_fuzzy_test =
 
-  'localhost|www\\.|\\.\\d{1,3}\\.|(?:\\.(?:%TLDS%)(?:' + src_ZPCc + '|>|$))';
+    'localhost|www\\.|\\.\\d{1,3}\\.|(?:\\.(?:%TLDS%)(?:' + re.src_ZPCc + '|>|$))';
 
-exports.tpl_email_fuzzy =
+  re.tpl_email_fuzzy =
 
-    '(^|<|>|\\(|' + src_ZCc + ')(' + src_email_name + '@' + tpl_host_fuzzy_strict + ')';
+      '(^|<|>|\\(|' + re.src_ZCc + ')(' + re.src_email_name + '@' + re.tpl_host_fuzzy_strict + ')';
 
-exports.tpl_link_fuzzy =
-    // Fuzzy link can't be prepended with .:/\- and non punctuation.
-    // but can start with > (markdown blockquote)
-    '(^|(?![.:/\\-_@])(?:[$+<=>^`|]|' + src_ZPCc + '))' +
-    '((?![$+<=>^`|])' + tpl_host_port_fuzzy_strict + src_path + ')';
+  re.tpl_link_fuzzy =
+      // Fuzzy link can't be prepended with .:/\- and non punctuation.
+      // but can start with > (markdown blockquote)
+      '(^|(?![.:/\\-_@])(?:[$+<=>^`|]|' + re.src_ZPCc + '))' +
+      '((?![$+<=>^`|])' + re.tpl_host_port_fuzzy_strict + re.src_path + ')';
 
-exports.tpl_link_no_ip_fuzzy =
-    // Fuzzy link can't be prepended with .:/\- and non punctuation.
-    // but can start with > (markdown blockquote)
-    '(^|(?![.:/\\-_@])(?:[$+<=>^`|]|' + src_ZPCc + '))' +
-    '((?![$+<=>^`|])' + tpl_host_port_no_ip_fuzzy_strict + src_path + ')';
+  re.tpl_link_no_ip_fuzzy =
+      // Fuzzy link can't be prepended with .:/\- and non punctuation.
+      // but can start with > (markdown blockquote)
+      '(^|(?![.:/\\-_@])(?:[$+<=>^`|]|' + re.src_ZPCc + '))' +
+      '((?![$+<=>^`|])' + re.tpl_host_port_no_ip_fuzzy_strict + re.src_path + ')';
+
+  return re;
+};
 
 },{"uc.micro/categories/Cc/regex":75,"uc.micro/categories/P/regex":77,"uc.micro/categories/Z/regex":78,"uc.micro/properties/Any/regex":80}],9:[function(require,module,exports){
 'use strict';
@@ -3369,9 +3405,6 @@ ParserBlock.prototype.tokenize = function (state, startLine, endLine) {
     if (line < endLine && state.isEmpty(line)) {
       hasEmptyLines = true;
       line++;
-
-      // two empty lines should stop the parser in list mode
-      if (line < endLine && state.parentType === 'list' && state.isEmpty(line)) { break; }
       state.line = line;
     }
   }
@@ -3849,20 +3882,18 @@ var default_rules = {};
 
 
 default_rules.code_inline = function (tokens, idx, options, env, slf) {
-  var token = tokens[idx],
-      attrs = slf.renderAttrs(token);
+  var token = tokens[idx];
 
-  return  '<code' + (attrs ? ' ' + attrs : '') + '>' +
+  return  '<code' + slf.renderAttrs(token) + '>' +
           escapeHtml(tokens[idx].content) +
           '</code>';
 };
 
 
 default_rules.code_block = function (tokens, idx, options, env, slf) {
-  var token = tokens[idx],
-      attrs = slf.renderAttrs(token);
+  var token = tokens[idx];
 
-  return  '<pre' + (attrs ? ' ' + attrs : '') + '><code>' +
+  return  '<pre' + slf.renderAttrs(token) + '><code>' +
           escapeHtml(tokens[idx].content) +
           '</code></pre>\n';
 };
@@ -3898,7 +3929,7 @@ default_rules.fence = function (tokens, idx, options, env, slf) {
     if (i < 0) {
       tmpAttrs.push([ 'class', options.langPrefix + langName ]);
     } else {
-      tmpAttrs[i] += ' ' + options.langPrefix + langName;
+      tmpAttrs[i][1] += ' ' + options.langPrefix + langName;
     }
 
     // Fake token just to render attributes
@@ -4529,9 +4560,25 @@ var isSpace = require('../common/utils').isSpace;
 
 
 module.exports = function blockquote(state, startLine, endLine, silent) {
-  var nextLine, lastLineEmpty, oldTShift, oldSCount, oldBMarks, oldIndent, oldParentType, lines, initial, offset, ch,
-      terminatorRules, token,
-      i, l, terminate,
+  var adjustTab,
+      ch,
+      i,
+      initial,
+      l,
+      lastLineEmpty,
+      lines,
+      nextLine,
+      offset,
+      oldBMarks,
+      oldBSCount,
+      oldIndent,
+      oldParentType,
+      oldSCount,
+      oldTShift,
+      spaceAfterMarker,
+      terminate,
+      terminatorRules,
+      token,
       pos = state.bMarks[startLine] + state.tShift[startLine],
       max = state.eMarks[startLine];
 
@@ -4542,14 +4589,40 @@ module.exports = function blockquote(state, startLine, endLine, silent) {
   // so no point trying to find the end of it in silent mode
   if (silent) { return true; }
 
-  // skip one optional space (but not tab, check cmark impl) after '>'
-  if (state.src.charCodeAt(pos) === 0x20) { pos++; }
-
   oldIndent = state.blkIndent;
   state.blkIndent = 0;
 
   // skip spaces after ">" and re-calculate offset
   initial = offset = state.sCount[startLine] + pos - (state.bMarks[startLine] + state.tShift[startLine]);
+
+  // skip one optional space after '>'
+  if (state.src.charCodeAt(pos) === 0x20 /* space */) {
+    // ' >   test '
+    //     ^ -- position start of line here:
+    pos++;
+    initial++;
+    offset++;
+    adjustTab = false;
+    spaceAfterMarker = true;
+  } else if (state.src.charCodeAt(pos) === 0x09 /* tab */) {
+    spaceAfterMarker = true;
+
+    if ((state.bsCount[startLine] + offset) % 4 === 3) {
+      // '  >\t  test '
+      //       ^ -- position start of line here (tab has width===1)
+      pos++;
+      initial++;
+      offset++;
+      adjustTab = false;
+    } else {
+      // ' >\t  test '
+      //    ^ -- position start of line here + shift bsCount slightly
+      //         to make extra space appear
+      adjustTab = true;
+    }
+  } else {
+    spaceAfterMarker = false;
+  }
 
   oldBMarks = [ state.bMarks[startLine] ];
   state.bMarks[startLine] = pos;
@@ -4559,7 +4632,7 @@ module.exports = function blockquote(state, startLine, endLine, silent) {
 
     if (isSpace(ch)) {
       if (ch === 0x09) {
-        offset += 4 - offset % 4;
+        offset += 4 - (offset + state.bsCount[startLine] + (adjustTab ? 1 : 0)) % 4;
       } else {
         offset++;
       }
@@ -4570,6 +4643,9 @@ module.exports = function blockquote(state, startLine, endLine, silent) {
     pos++;
   }
 
+  oldBSCount = [ state.bsCount[startLine] ];
+  state.bsCount[startLine] = state.sCount[startLine] + 1 + (spaceAfterMarker ? 1 : 0);
+
   lastLineEmpty = pos >= max;
 
   oldSCount = [ state.sCount[startLine] ];
@@ -4579,6 +4655,9 @@ module.exports = function blockquote(state, startLine, endLine, silent) {
   state.tShift[startLine] = pos - state.bMarks[startLine];
 
   terminatorRules = state.md.block.ruler.getRules('blockquote');
+
+  oldParentType = state.parentType;
+  state.parentType = 'blockquote';
 
   // Search the end of the block
   //
@@ -4612,11 +4691,37 @@ module.exports = function blockquote(state, startLine, endLine, silent) {
     if (state.src.charCodeAt(pos++) === 0x3E/* > */) {
       // This line is inside the blockquote.
 
-      // skip one optional space (but not tab, check cmark impl) after '>'
-      if (state.src.charCodeAt(pos) === 0x20) { pos++; }
-
       // skip spaces after ">" and re-calculate offset
       initial = offset = state.sCount[nextLine] + pos - (state.bMarks[nextLine] + state.tShift[nextLine]);
+
+      // skip one optional space after '>'
+      if (state.src.charCodeAt(pos) === 0x20 /* space */) {
+        // ' >   test '
+        //     ^ -- position start of line here:
+        pos++;
+        initial++;
+        offset++;
+        adjustTab = false;
+        spaceAfterMarker = true;
+      } else if (state.src.charCodeAt(pos) === 0x09 /* tab */) {
+        spaceAfterMarker = true;
+
+        if ((state.bsCount[nextLine] + offset) % 4 === 3) {
+          // '  >\t  test '
+          //       ^ -- position start of line here (tab has width===1)
+          pos++;
+          initial++;
+          offset++;
+          adjustTab = false;
+        } else {
+          // ' >\t  test '
+          //    ^ -- position start of line here + shift bsCount slightly
+          //         to make extra space appear
+          adjustTab = true;
+        }
+      } else {
+        spaceAfterMarker = false;
+      }
 
       oldBMarks.push(state.bMarks[nextLine]);
       state.bMarks[nextLine] = pos;
@@ -4626,7 +4731,7 @@ module.exports = function blockquote(state, startLine, endLine, silent) {
 
         if (isSpace(ch)) {
           if (ch === 0x09) {
-            offset += 4 - offset % 4;
+            offset += 4 - (offset + state.bsCount[nextLine] + (adjustTab ? 1 : 0)) % 4;
           } else {
             offset++;
           }
@@ -4638,6 +4743,9 @@ module.exports = function blockquote(state, startLine, endLine, silent) {
       }
 
       lastLineEmpty = pos >= max;
+
+      oldBSCount.push(state.bsCount[nextLine]);
+      state.bsCount[nextLine] = state.sCount[nextLine] + 1 + (spaceAfterMarker ? 1 : 0);
 
       oldSCount.push(state.sCount[nextLine]);
       state.sCount[nextLine] = offset - initial;
@@ -4661,6 +4769,7 @@ module.exports = function blockquote(state, startLine, endLine, silent) {
     if (terminate) { break; }
 
     oldBMarks.push(state.bMarks[nextLine]);
+    oldBSCount.push(state.bsCount[nextLine]);
     oldTShift.push(state.tShift[nextLine]);
     oldSCount.push(state.sCount[nextLine]);
 
@@ -4668,9 +4777,6 @@ module.exports = function blockquote(state, startLine, endLine, silent) {
     //
     state.sCount[nextLine] = -1;
   }
-
-  oldParentType = state.parentType;
-  state.parentType = 'blockquote';
 
   token        = state.push('blockquote_open', 'blockquote', 1);
   token.markup = '>';
@@ -4690,6 +4796,7 @@ module.exports = function blockquote(state, startLine, endLine, silent) {
     state.bMarks[i + startLine] = oldBMarks[i];
     state.tShift[i + startLine] = oldTShift[i];
     state.sCount[i + startLine] = oldSCount[i];
+    state.bsCount[i + startLine] = oldBSCount[i];
   }
   state.blkIndent = oldIndent;
 
@@ -4703,7 +4810,7 @@ module.exports = function blockquote(state, startLine, endLine, silent) {
 
 
 module.exports = function code(state, startLine, endLine/*, silent*/) {
-  var nextLine, last, token, emptyLines = 0;
+  var nextLine, last, token;
 
   if (state.sCount[startLine] - state.blkIndent < 4) { return false; }
 
@@ -4711,19 +4818,9 @@ module.exports = function code(state, startLine, endLine/*, silent*/) {
 
   while (nextLine < endLine) {
     if (state.isEmpty(nextLine)) {
-      emptyLines++;
-
-      // workaround for lists: 2 blank lines should terminate indented
-      // code block, but not fenced code block
-      if (emptyLines >= 2 && state.parentType === 'list') {
-        break;
-      }
-
       nextLine++;
       continue;
     }
-
-    emptyLines = 0;
 
     if (state.sCount[nextLine] - state.blkIndent >= 4) {
       nextLine++;
@@ -4860,7 +4957,7 @@ module.exports = function heading(state, startLine, endLine, silent) {
     ch = state.src.charCodeAt(++pos);
   }
 
-  if (level > 6 || (pos < max && ch !== 0x20/* space */)) { return false; }
+  if (level > 6 || (pos < max && !isSpace(ch))) { return false; }
 
   if (silent) { return true; }
 
@@ -5014,8 +5111,11 @@ module.exports = function html_block(state, startLine, endLine, silent) {
 
 module.exports = function lheading(state, startLine, endLine/*, silent*/) {
   var content, terminate, i, l, token, pos, max, level, marker,
-      nextLine = startLine + 1,
+      nextLine = startLine + 1, oldParentType,
       terminatorRules = state.md.block.ruler.getRules('paragraph');
+
+  oldParentType = state.parentType;
+  state.parentType = 'paragraph'; // use paragraph to match terminatorRules
 
   // jump line-by-line until empty one or EOF
   for (; nextLine < endLine && !state.isEmpty(nextLine); nextLine++) {
@@ -5079,6 +5179,8 @@ module.exports = function lheading(state, startLine, endLine/*, silent*/) {
 
   token          = state.push('heading_close', 'h' + String(level), -1);
   token.markup   = String.fromCharCode(marker);
+
+  state.parentType = oldParentType;
 
   return true;
 };
@@ -5184,41 +5286,71 @@ function markTightParagraphs(state, idx) {
 
 
 module.exports = function list(state, startLine, endLine, silent) {
-  var nextLine,
-      initial,
-      offset,
+  var ch,
+      contentStart,
+      i,
       indent,
-      oldTShift,
+      indentAfterMarker,
+      initial,
+      isOrdered,
+      itemLines,
+      l,
+      listLines,
+      listTokIdx,
+      markerCharCode,
+      markerValue,
+      max,
+      nextLine,
+      offset,
       oldIndent,
       oldLIndent,
-      oldTight,
       oldParentType,
-      start,
-      posAfterMarker,
-      ch,
+      oldTShift,
+      oldTight,
       pos,
-      max,
-      indentAfterMarker,
-      markerValue,
-      markerCharCode,
-      isOrdered,
-      contentStart,
-      listTokIdx,
+      posAfterMarker,
       prevEmptyEnd,
-      listLines,
-      itemLines,
-      tight = true,
+      start,
+      terminate,
       terminatorRules,
       token,
-      i, l, terminate;
+      isTerminatingParagraph = false,
+      tight = true;
+
+  // limit conditions when list can interrupt
+  // a paragraph (validation mode only)
+  if (silent && state.parentType === 'paragraph') {
+    // Next list item should still terminate previous list item;
+    //
+    // This code can fail if plugins use blkIndent as well as lists,
+    // but I hope the spec gets fixed long before that happens.
+    //
+    if (state.tShift[startLine] >= state.blkIndent) {
+      isTerminatingParagraph = true;
+    }
+  }
 
   // Detect list type and position after marker
   if ((posAfterMarker = skipOrderedListMarker(state, startLine)) >= 0) {
     isOrdered = true;
+    start = state.bMarks[startLine] + state.tShift[startLine];
+    markerValue = Number(state.src.substr(start, posAfterMarker - start - 1));
+
+    // If we're starting a new ordered list right after
+    // a paragraph, it should start with 1.
+    if (isTerminatingParagraph && markerValue !== 1) return false;
+
   } else if ((posAfterMarker = skipBulletListMarker(state, startLine)) >= 0) {
     isOrdered = false;
+
   } else {
     return false;
+  }
+
+  // If we're starting a new unordered list right after
+  // a paragraph, first line should not be empty.
+  if (isTerminatingParagraph) {
+    if (state.skipSpaces(posAfterMarker) >= state.eMarks[startLine]) return false;
   }
 
   // We should terminate list on style change. Remember first one to compare.
@@ -5231,9 +5363,6 @@ module.exports = function list(state, startLine, endLine, silent) {
   listTokIdx = state.tokens.length;
 
   if (isOrdered) {
-    start = state.bMarks[startLine] + state.tShift[startLine];
-    markerValue = Number(state.src.substr(start, posAfterMarker - start - 1));
-
     token       = state.push('ordered_list_open', 'ol', 1);
     if (markerValue !== 1) {
       token.attrs = [ [ 'start', markerValue ] ];
@@ -5254,6 +5383,9 @@ module.exports = function list(state, startLine, endLine, silent) {
   prevEmptyEnd = false;
   terminatorRules = state.md.block.ruler.getRules('list');
 
+  oldParentType = state.parentType;
+  state.parentType = 'list';
+
   while (nextLine < endLine) {
     pos = posAfterMarker;
     max = state.eMarks[nextLine];
@@ -5265,7 +5397,7 @@ module.exports = function list(state, startLine, endLine, silent) {
 
       if (isSpace(ch)) {
         if (ch === 0x09) {
-          offset += 4 - offset % 4;
+          offset += 4 - (offset + state.bsCount[nextLine]) % 4;
         } else {
           offset++;
         }
@@ -5302,10 +5434,8 @@ module.exports = function list(state, startLine, endLine, silent) {
     oldTight = state.tight;
     oldTShift = state.tShift[startLine];
     oldLIndent = state.sCount[startLine];
-    oldParentType = state.parentType;
     state.blkIndent = indent;
     state.tight = true;
-    state.parentType = 'list';
     state.tShift[startLine] = contentStart - state.bMarks[startLine];
     state.sCount[startLine] = offset;
 
@@ -5334,7 +5464,6 @@ module.exports = function list(state, startLine, endLine, silent) {
     state.tShift[startLine] = oldTShift;
     state.sCount[startLine] = oldLIndent;
     state.tight = oldTight;
-    state.parentType = oldParentType;
 
     token        = state.push('list_item_close', 'li', -1);
     token.markup = String.fromCharCode(markerCharCode);
@@ -5344,10 +5473,6 @@ module.exports = function list(state, startLine, endLine, silent) {
     contentStart = state.bMarks[startLine];
 
     if (nextLine >= endLine) { break; }
-
-    if (state.isEmpty(nextLine)) {
-      break;
-    }
 
     //
     // Try to check if list is terminated or continued.
@@ -5387,6 +5512,8 @@ module.exports = function list(state, startLine, endLine, silent) {
   listLines[1] = nextLine;
   state.line = nextLine;
 
+  state.parentType = oldParentType;
+
   // mark paragraphs tight if needed
   if (tight) {
     markTightParagraphs(state, listTokIdx);
@@ -5402,10 +5529,13 @@ module.exports = function list(state, startLine, endLine, silent) {
 
 
 module.exports = function paragraph(state, startLine/*, endLine*/) {
-  var content, terminate, i, l, token,
+  var content, terminate, i, l, token, oldParentType,
       nextLine = startLine + 1,
       terminatorRules = state.md.block.ruler.getRules('paragraph'),
       endLine = state.lineMax;
+
+  oldParentType = state.parentType;
+  state.parentType = 'paragraph';
 
   // jump line-by-line until empty one or EOF
   for (; nextLine < endLine && !state.isEmpty(nextLine); nextLine++) {
@@ -5441,6 +5571,8 @@ module.exports = function paragraph(state, startLine/*, endLine*/) {
 
   token          = state.push('paragraph_close', 'p', -1);
 
+  state.parentType = oldParentType;
+
   return true;
 };
 
@@ -5464,6 +5596,7 @@ module.exports = function reference(state, startLine, _endLine, silent) {
       l,
       label,
       labelEnd,
+      oldParentType,
       res,
       start,
       str,
@@ -5492,6 +5625,9 @@ module.exports = function reference(state, startLine, _endLine, silent) {
 
   // jump line-by-line until empty one or EOF
   terminatorRules = state.md.block.ruler.getRules('reference');
+
+  oldParentType = state.parentType;
+  state.parentType = 'reference';
 
   for (; nextLine < endLine && !state.isEmpty(nextLine); nextLine++) {
     // this would be a code block normally, but after paragraph
@@ -5633,6 +5769,8 @@ module.exports = function reference(state, startLine, _endLine, silent) {
     state.env.references[label] = { title: title, href: href };
   }
 
+  state.parentType = oldParentType;
+
   state.line = startLine + lines + 1;
   return true;
 };
@@ -5667,14 +5805,29 @@ function StateBlock(src, md, env, tokens) {
   this.tShift = [];  // offsets of the first non-space characters (tabs not expanded)
   this.sCount = [];  // indents for each line (tabs expanded)
 
+  // An amount of virtual spaces (tabs expanded) between beginning
+  // of each line (bMarks) and real beginning of that line.
+  //
+  // It exists only as a hack because blockquotes override bMarks
+  // losing information in the process.
+  //
+  // It's used only when expanding tabs, you can think about it as
+  // an initial tab length, e.g. bsCount=21 applied to string `\t123`
+  // means first tab should be expanded to 4-21%4 === 3 spaces.
+  //
+  this.bsCount = [];
+
   // block parser variables
   this.blkIndent  = 0; // required block content indent
                        // (for example, if we are in list)
   this.line       = 0; // line index in src
   this.lineMax    = 0; // lines count
   this.tight      = false;  // loose/tight mode for lists
-  this.parentType = 'root'; // if `list`, block parser stops on two newlines
   this.ddIndent   = -1; // indent of the current dd block (-1 if there isn't any)
+
+  // can be 'blockquote', 'list', 'root', 'paragraph' or 'reference'
+  // used in lists to determine if they interrupt a paragraph
+  this.parentType = 'root';
 
   this.level = 0;
 
@@ -5710,6 +5863,7 @@ function StateBlock(src, md, env, tokens) {
       this.eMarks.push(pos);
       this.tShift.push(indent);
       this.sCount.push(offset);
+      this.bsCount.push(0);
 
       indent_found = false;
       indent = 0;
@@ -5723,6 +5877,7 @@ function StateBlock(src, md, env, tokens) {
   this.eMarks.push(s.length);
   this.tShift.push(0);
   this.sCount.push(0);
+  this.bsCount.push(0);
 
   this.lineMax = this.bMarks.length - 1; // don't count last fake line
 }
@@ -5820,7 +5975,7 @@ StateBlock.prototype.getLines = function getLines(begin, end, indent, keepLastLF
 
       if (isSpace(ch)) {
         if (ch === 0x09) {
-          lineIndent += 4 - lineIndent % 4;
+          lineIndent += 4 - (lineIndent + this.bsCount[line]) % 4;
         } else {
           lineIndent++;
         }
@@ -5834,7 +5989,13 @@ StateBlock.prototype.getLines = function getLines(begin, end, indent, keepLastLF
       first++;
     }
 
-    queue[i] = this.src.slice(first, last);
+    if (lineIndent > indent) {
+      // partially expanding tabs in code blocks, e.g '\t\tfoobar'
+      // with indent=2 becomes '  \tfoobar'
+      queue[i] = new Array(lineIndent - indent + 1).join(' ') + this.src.slice(first, last);
+    } else {
+      queue[i] = this.src.slice(first, last);
+    }
   }
 
   return queue.join('');
@@ -6249,22 +6410,32 @@ function replaceFn(match, name) {
 }
 
 function replace_scoped(inlineTokens) {
-  var i, token;
+  var i, token, inside_autolink = 0;
 
   for (i = inlineTokens.length - 1; i >= 0; i--) {
     token = inlineTokens[i];
-    if (token.type === 'text') {
+
+    if (token.type === 'text' && !inside_autolink) {
       token.content = token.content.replace(SCOPED_ABBR_RE, replaceFn);
+    }
+
+    if (token.type === 'link_open' && token.info === 'auto') {
+      inside_autolink--;
+    }
+
+    if (token.type === 'link_close' && token.info === 'auto') {
+      inside_autolink++;
     }
   }
 }
 
 function replace_rare(inlineTokens) {
-  var i, token;
+  var i, token, inside_autolink = 0;
 
   for (i = inlineTokens.length - 1; i >= 0; i--) {
     token = inlineTokens[i];
-    if (token.type === 'text') {
+
+    if (token.type === 'text' && !inside_autolink) {
       if (RARE_RE.test(token.content)) {
         token.content = token.content
                     .replace(/\+-/g, '±')
@@ -6278,6 +6449,14 @@ function replace_rare(inlineTokens) {
                     .replace(/(^|\s)--(\s|$)/mg, '$1\u2013$2')
                     .replace(/(^|[^-\s])--([^-\s]|$)/mg, '$1\u2013$2');
       }
+    }
+
+    if (token.type === 'link_open' && token.info === 'auto') {
+      inside_autolink--;
+    }
+
+    if (token.type === 'link_close' && token.info === 'auto') {
+      inside_autolink++;
     }
   }
 }
@@ -6665,11 +6844,19 @@ module.exports = function link_pairs(state) {
           currDelim.end < 0 &&
           currDelim.level === lastDelim.level) {
 
-        lastDelim.jump = i - j;
-        lastDelim.open = false;
-        currDelim.end  = i;
-        currDelim.jump = 0;
-        break;
+        // typeofs are for backward compatibility with plugins
+        var odd_match = (currDelim.close || lastDelim.open) &&
+                        typeof currDelim.length !== 'undefined' &&
+                        typeof lastDelim.length !== 'undefined' &&
+                        (currDelim.length + lastDelim.length) % 3 === 0;
+
+        if (!odd_match) {
+          lastDelim.jump = i - j;
+          lastDelim.open = false;
+          currDelim.end  = i;
+          currDelim.jump = 0;
+          break;
+        }
       }
 
       j -= currDelim.jump + 1;
@@ -6704,6 +6891,10 @@ module.exports.tokenize = function emphasis(state, silent) {
       // Char code of the starting marker (number).
       //
       marker: marker,
+
+      // Total length of these series of delimiters.
+      //
+      length: scanned.length,
 
       // An amount of characters before this one that's equivalent to
       // current one. In plain English: if this delimiter does not open
@@ -8992,18 +9183,19 @@ module.exports = urlParse;
 },{}],75:[function(require,module,exports){
 module.exports=/[\0-\x1F\x7F-\x9F]/
 },{}],76:[function(require,module,exports){
-module.exports=/[\xAD\u0600-\u0605\u061C\u06DD\u070F\u180E\u200B-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u206F\uFEFF\uFFF9-\uFFFB]|\uD804\uDCBD|\uD82F[\uDCA0-\uDCA3]|\uD834[\uDD73-\uDD7A]|\uDB40[\uDC01\uDC20-\uDC7F]/
+module.exports=/[\xAD\u0600-\u0605\u061C\u06DD\u070F\u08E2\u180E\u200B-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u206F\uFEFF\uFFF9-\uFFFB]|\uD804\uDCBD|\uD82F[\uDCA0-\uDCA3]|\uD834[\uDD73-\uDD7A]|\uDB40[\uDC01\uDC20-\uDC7F]/
 },{}],77:[function(require,module,exports){
-module.exports=/[!-#%-\*,-/:;\?@\[-\]_\{\}\xA1\xA7\xAB\xB6\xB7\xBB\xBF\u037E\u0387\u055A-\u055F\u0589\u058A\u05BE\u05C0\u05C3\u05C6\u05F3\u05F4\u0609\u060A\u060C\u060D\u061B\u061E\u061F\u066A-\u066D\u06D4\u0700-\u070D\u07F7-\u07F9\u0830-\u083E\u085E\u0964\u0965\u0970\u0AF0\u0DF4\u0E4F\u0E5A\u0E5B\u0F04-\u0F12\u0F14\u0F3A-\u0F3D\u0F85\u0FD0-\u0FD4\u0FD9\u0FDA\u104A-\u104F\u10FB\u1360-\u1368\u1400\u166D\u166E\u169B\u169C\u16EB-\u16ED\u1735\u1736\u17D4-\u17D6\u17D8-\u17DA\u1800-\u180A\u1944\u1945\u1A1E\u1A1F\u1AA0-\u1AA6\u1AA8-\u1AAD\u1B5A-\u1B60\u1BFC-\u1BFF\u1C3B-\u1C3F\u1C7E\u1C7F\u1CC0-\u1CC7\u1CD3\u2010-\u2027\u2030-\u2043\u2045-\u2051\u2053-\u205E\u207D\u207E\u208D\u208E\u2308-\u230B\u2329\u232A\u2768-\u2775\u27C5\u27C6\u27E6-\u27EF\u2983-\u2998\u29D8-\u29DB\u29FC\u29FD\u2CF9-\u2CFC\u2CFE\u2CFF\u2D70\u2E00-\u2E2E\u2E30-\u2E42\u3001-\u3003\u3008-\u3011\u3014-\u301F\u3030\u303D\u30A0\u30FB\uA4FE\uA4FF\uA60D-\uA60F\uA673\uA67E\uA6F2-\uA6F7\uA874-\uA877\uA8CE\uA8CF\uA8F8-\uA8FA\uA8FC\uA92E\uA92F\uA95F\uA9C1-\uA9CD\uA9DE\uA9DF\uAA5C-\uAA5F\uAADE\uAADF\uAAF0\uAAF1\uABEB\uFD3E\uFD3F\uFE10-\uFE19\uFE30-\uFE52\uFE54-\uFE61\uFE63\uFE68\uFE6A\uFE6B\uFF01-\uFF03\uFF05-\uFF0A\uFF0C-\uFF0F\uFF1A\uFF1B\uFF1F\uFF20\uFF3B-\uFF3D\uFF3F\uFF5B\uFF5D\uFF5F-\uFF65]|\uD800[\uDD00-\uDD02\uDF9F\uDFD0]|\uD801\uDD6F|\uD802[\uDC57\uDD1F\uDD3F\uDE50-\uDE58\uDE7F\uDEF0-\uDEF6\uDF39-\uDF3F\uDF99-\uDF9C]|\uD804[\uDC47-\uDC4D\uDCBB\uDCBC\uDCBE-\uDCC1\uDD40-\uDD43\uDD74\uDD75\uDDC5-\uDDC9\uDDCD\uDDDB\uDDDD-\uDDDF\uDE38-\uDE3D\uDEA9]|\uD805[\uDCC6\uDDC1-\uDDD7\uDE41-\uDE43\uDF3C-\uDF3E]|\uD809[\uDC70-\uDC74]|\uD81A[\uDE6E\uDE6F\uDEF5\uDF37-\uDF3B\uDF44]|\uD82F\uDC9F|\uD836[\uDE87-\uDE8B]/
+module.exports=/[!-#%-\*,-/:;\?@\[-\]_\{\}\xA1\xA7\xAB\xB6\xB7\xBB\xBF\u037E\u0387\u055A-\u055F\u0589\u058A\u05BE\u05C0\u05C3\u05C6\u05F3\u05F4\u0609\u060A\u060C\u060D\u061B\u061E\u061F\u066A-\u066D\u06D4\u0700-\u070D\u07F7-\u07F9\u0830-\u083E\u085E\u0964\u0965\u0970\u0AF0\u0DF4\u0E4F\u0E5A\u0E5B\u0F04-\u0F12\u0F14\u0F3A-\u0F3D\u0F85\u0FD0-\u0FD4\u0FD9\u0FDA\u104A-\u104F\u10FB\u1360-\u1368\u1400\u166D\u166E\u169B\u169C\u16EB-\u16ED\u1735\u1736\u17D4-\u17D6\u17D8-\u17DA\u1800-\u180A\u1944\u1945\u1A1E\u1A1F\u1AA0-\u1AA6\u1AA8-\u1AAD\u1B5A-\u1B60\u1BFC-\u1BFF\u1C3B-\u1C3F\u1C7E\u1C7F\u1CC0-\u1CC7\u1CD3\u2010-\u2027\u2030-\u2043\u2045-\u2051\u2053-\u205E\u207D\u207E\u208D\u208E\u2308-\u230B\u2329\u232A\u2768-\u2775\u27C5\u27C6\u27E6-\u27EF\u2983-\u2998\u29D8-\u29DB\u29FC\u29FD\u2CF9-\u2CFC\u2CFE\u2CFF\u2D70\u2E00-\u2E2E\u2E30-\u2E44\u3001-\u3003\u3008-\u3011\u3014-\u301F\u3030\u303D\u30A0\u30FB\uA4FE\uA4FF\uA60D-\uA60F\uA673\uA67E\uA6F2-\uA6F7\uA874-\uA877\uA8CE\uA8CF\uA8F8-\uA8FA\uA8FC\uA92E\uA92F\uA95F\uA9C1-\uA9CD\uA9DE\uA9DF\uAA5C-\uAA5F\uAADE\uAADF\uAAF0\uAAF1\uABEB\uFD3E\uFD3F\uFE10-\uFE19\uFE30-\uFE52\uFE54-\uFE61\uFE63\uFE68\uFE6A\uFE6B\uFF01-\uFF03\uFF05-\uFF0A\uFF0C-\uFF0F\uFF1A\uFF1B\uFF1F\uFF20\uFF3B-\uFF3D\uFF3F\uFF5B\uFF5D\uFF5F-\uFF65]|\uD800[\uDD00-\uDD02\uDF9F\uDFD0]|\uD801\uDD6F|\uD802[\uDC57\uDD1F\uDD3F\uDE50-\uDE58\uDE7F\uDEF0-\uDEF6\uDF39-\uDF3F\uDF99-\uDF9C]|\uD804[\uDC47-\uDC4D\uDCBB\uDCBC\uDCBE-\uDCC1\uDD40-\uDD43\uDD74\uDD75\uDDC5-\uDDC9\uDDCD\uDDDB\uDDDD-\uDDDF\uDE38-\uDE3D\uDEA9]|\uD805[\uDC4B-\uDC4F\uDC5B\uDC5D\uDCC6\uDDC1-\uDDD7\uDE41-\uDE43\uDE60-\uDE6C\uDF3C-\uDF3E]|\uD807[\uDC41-\uDC45\uDC70\uDC71]|\uD809[\uDC70-\uDC74]|\uD81A[\uDE6E\uDE6F\uDEF5\uDF37-\uDF3B\uDF44]|\uD82F\uDC9F|\uD836[\uDE87-\uDE8B]|\uD83A[\uDD5E\uDD5F]/
 },{}],78:[function(require,module,exports){
 module.exports=/[ \xA0\u1680\u2000-\u200A\u202F\u205F\u3000]/
 },{}],79:[function(require,module,exports){
+'use strict';
 
-module.exports.Any = require('./properties/Any/regex');
-module.exports.Cc  = require('./categories/Cc/regex');
-module.exports.Cf  = require('./categories/Cf/regex');
-module.exports.P   = require('./categories/P/regex');
-module.exports.Z   = require('./categories/Z/regex');
+exports.Any = require('./properties/Any/regex');
+exports.Cc  = require('./categories/Cc/regex');
+exports.Cf  = require('./categories/Cf/regex');
+exports.P   = require('./categories/P/regex');
+exports.Z   = require('./categories/Z/regex');
 
 },{"./categories/Cc/regex":75,"./categories/Cf/regex":76,"./categories/P/regex":77,"./categories/Z/regex":78,"./properties/Any/regex":80}],80:[function(require,module,exports){
 module.exports=/[\0-\uD7FF\uE000-\uFFFF]|[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF]/
