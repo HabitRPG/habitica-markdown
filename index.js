@@ -4,6 +4,7 @@ var markdownit = require('markdown-it');
 var linkifyImagesPlugin = require('markdown-it-linkify-images');
 var linkAttributesPlugin = require('markdown-it-link-attributes');
 var emojiPlugin = require('habitica-markdown-emoji');
+var taskListsPlugin = require('markdown-it-task-lists');
 
 function createMdInstance (options) {
   options = options || {};
@@ -19,7 +20,8 @@ function createMdInstance (options) {
       linkClass: 'markdown-img-link',
       imgClass: 'markdown-img',
     })
-    .use(emojiPlugin);
+    .use(emojiPlugin)
+    .use(taskListsPlugin, {label: true});
 
   return md;
 }
