@@ -7291,7 +7291,7 @@ module.exports = function image(state, silent) {
     token          = state.push('image', 'img', 0);
     token.attrs    = attrs = [ [ 'src', href ], [ 'alt', '' ] ];
     token.children = tokens;
-    token.content  = content;
+    token.content  = state.md.utils.escapeHtml(content);
 
     if (title) {
       attrs.push([ 'title', title ]);
