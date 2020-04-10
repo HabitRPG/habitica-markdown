@@ -27,10 +27,13 @@ function findMentionTokens (tokens) {
   return result;
 }
 
-function printAllTokens (tokens) {
+function findAllTokenTypes (tokens) {
+  const result = [];
   forAllTokens(tokens, token => {
-    console.log(token); // eslint-disable-line no-console
+    result.push(token.type);
   });
+
+  return result;
 }
 
-module.exports = { findMentionTokens, printAllTokens };
+module.exports = { findMentionTokens, findAllTokenTypes };
