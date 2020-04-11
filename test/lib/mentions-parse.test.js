@@ -22,6 +22,23 @@ describe('mentionParser', () => {
     expect(mentionTokens.map(t => t.content)).to.deep.equal(['@user1', '@user2', '@user3']);
   });
 
+  it('does not parse mentions in e-mail addresses', () => {
+    const text = 'send an e-mail to nevermind@user.com';
+
+    const mentionTokens = findMentionTokens(md.parse(text));
+
+    expect(mentionTokens.length).to.equal(0);
+  });
+
+  it('does parse mentions before forgotten spaces after dots', () => {
+    const text = 'Here it might look like an e-mail to @user.It is just a typo!';
+
+    const mentionTokens = findMentionTokens(md.parse(text))[0];
+    
+    expect(token.type).to.equal('mention');
+    expect(token.content).to.equal('@user');
+  });
+
   // issue: https://github.com/HabitRPG/habitica/issues/11520
   it('does not parse mentions in links', () => {
     const text = '[website of @user](http://for.sure.it/is/awesome)';
