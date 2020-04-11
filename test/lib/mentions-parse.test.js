@@ -22,7 +22,7 @@ describe('mentionParser', () => {
     expect(mentionTokens.map(t => t.content)).to.deep.equal(['@user1', '@user2', '@user3']);
   });
 
-  // fixes issue: https://github.com/HabitRPG/habitica/issues/11520
+  // issue: https://github.com/HabitRPG/habitica/issues/11520
   it('does not parse mentions in links', () => {
     const text = '[website of @user](http://for.sure.it/is/awesome)';
 
@@ -31,9 +31,19 @@ describe('mentionParser', () => {
     expect(mentionTokens.length).to.equal(0);
   });
 
-  // fixes issue https://github.com/HabitRPG/habitica/issues/12033
+  // issue: https://github.com/HabitRPG/habitica/issues/10924
+  it('does not parse mentions in urls', () => {
+    const text = 'http://medium.com/@user/awesome-blog-post-we-all-should-read';
+
+    const tokens = md.parse(text);
+    const mentionTokens = findMentionTokens(tokens);
+
+    expect(mentionTokens.length).to.equal(0);
+  });
+
+  // issue https://github.com/HabitRPG/habitica/issues/12033
   it('does not emphasize user mentions', () => {
-    const emphasis_types = ['em_open', 'em_close', 'strong_open', 'strong_close'];
+    const emphasisTypes = ['em_open', 'em_close', 'strong_open', 'strong_close'];
     const text = '@_spider_ @__bigger-spider__';
 
     const tokens = md.parse(text);
@@ -41,10 +51,10 @@ describe('mentionParser', () => {
 
     expect(mentionTokens[0].content).to.equal('@_spider_');
     expect(mentionTokens[1].content).to.equal('@__bigger-spider__');
-    expect(findAllTokenTypes(tokens).map(t => t.type)).to.not.include(emphasis_types);
+    expect(findAllTokenTypes(tokens).map(t => t.type)).to.not.include(emphasisTypes);
   });
 
-  // fixes issue: https://github.com/HabitRPG/habitica/issues/11504
+  // issue: https://github.com/HabitRPG/habitica/issues/11504
   describe('mentionParser ignoring code blocks', () => {
     it('does not parse mentions in inline code blocks', () => {
       const text = '`@user`';

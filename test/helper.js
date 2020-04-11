@@ -4,16 +4,14 @@
 function forAllTokens (tokens, processToken) {
   const [head, ...tail] = tokens;
 
-  if (!head) {
-    return;
-  }
+  if (head) {
+    processToken(head);
 
-  processToken(head);
-
-  if (head.children) {
-    forAllTokens(head.children, processToken);
+    if (head.children) {
+      forAllTokens(head.children, processToken);
+    }
+    forAllTokens(tail, processToken);
   }
-  forAllTokens(tail, processToken);
 }
 
 function findMentionTokens (tokens) {
