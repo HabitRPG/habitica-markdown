@@ -33,19 +33,22 @@ describe('mentionParser', () => {
   it('does parse mentions before forgotten spaces after dots', () => {
     const text = 'Here it might look like an e-mail to @user.It is just a typo!';
 
-    const mentionTokens = findMentionTokens(md.parse(text))[0];
-    
+    const token = findMentionTokens(md.parse(text))[0];
+
     expect(token.type).to.equal('mention');
     expect(token.content).to.equal('@user');
   });
 
-  // issue: https://github.com/HabitRPG/habitica/issues/11520
-  it('does not parse mentions in links', () => {
+  it('parses mentions in links correctly', () => {
     const text = '[website of @user](http://for.sure.it/is/awesome)';
 
-    const mentionTokens = findMentionTokens(md.parse(text));
+    const linkTokens = md.parse(text)[1].children;
 
-    expect(mentionTokens.length).to.equal(0);
+    expect(linkTokens.length).to.equal(4);
+    const mentionToken = linkTokens[2];
+    expect(mentionToken.type).to.equal('mention');
+    expect(mentionToken.content).to.equal('@user');
+    expect(linkTokens[1].content).to.equal('website of ');
   });
 
   // issue: https://github.com/HabitRPG/habitica/issues/10924
