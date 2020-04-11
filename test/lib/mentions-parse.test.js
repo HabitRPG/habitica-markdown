@@ -13,6 +13,14 @@ describe('mentionParser', () => {
     expect(token.content).to.equal('@user');
   });
 
+  it('doesn\'t find separate @ to be mentions', () => {
+    const text = 'You know we\'ll find this @ home';
+
+    const mentionTokens = findMentionTokens(md.parse(text));
+
+    expect(mentionTokens.length).to.equal(0);
+  });
+
   it('parses multiple mention tokens embedded in different blocks', () => {
     const text = 'first paragraph @user1\n\nsecond paragraph @user2\n- list item\n- @user3';
 
@@ -55,8 +63,7 @@ describe('mentionParser', () => {
   it('does not parse mentions in urls', () => {
     const text = 'http://medium.com/@user/awesome-blog-post-we-all-should-read';
 
-    const tokens = md.parse(text);
-    const mentionTokens = findMentionTokens(tokens);
+    const mentionTokens = findMentionTokens(md.parse(text));
 
     expect(mentionTokens.length).to.equal(0);
   });
