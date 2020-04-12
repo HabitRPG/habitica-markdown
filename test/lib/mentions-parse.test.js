@@ -103,9 +103,8 @@ describe('mentionParser', () => {
     expect(mentionTokens.length).to.equal(0);
   });
 
-  // issue: https://github.com/HabitRPG/habitica/issues/10924
-  it('does not parse mentions directly after urls that are only domain names', () => {
-    const text = 'http://www.google.com@user';
+  it('parses mentions directly after urls that are only domain names', () => {
+    const text = 'www.google.amsterdam@user';
 
     const mentionTokens = findMentionTokens(md.parse(text));
 
