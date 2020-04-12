@@ -92,7 +92,7 @@ describe('mentionParser', () => {
 
     expect(token.type).to.equal('mention');
     expect(token.content).to.equal('@user');
- });
+  });
 
   // issue: https://github.com/HabitRPG/habitica/issues/10924
   it('does not parse mentions in urls', () => {
@@ -101,6 +101,16 @@ describe('mentionParser', () => {
     const mentionTokens = findMentionTokens(md.parse(text));
 
     expect(mentionTokens.length).to.equal(0);
+  });
+
+  // issue: https://github.com/HabitRPG/habitica/issues/10924
+  it('does not parse mentions directly after urls that are only domain names', () => {
+    const text = 'http://www.google.com@user';
+
+    const mentionTokens = findMentionTokens(md.parse(text));
+
+    expect(mentionTokens.length).to.equal(1);
+    expect(mentionTokens[0].content).to.equal('@user');
   });
 
   // issue https://github.com/HabitRPG/habitica/issues/12033
