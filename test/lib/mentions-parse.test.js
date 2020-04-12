@@ -47,6 +47,15 @@ describe('mentionParser', () => {
     expect(token.content).to.equal('@_user_');
   });
 
+  it('parses consecutive mentions', () => {
+    const text = '@user1@user2@user3';
+
+    const mentionTokens = findMentionTokens(md.parse(text));
+
+    expect(mentionTokens.length).to.equal(3);
+    expect(mentionTokens.map(t => t.content)).to.deep.equal(['@user1', '@user2', '@user3']);
+  });
+
   it('does parse mentions before forgotten spaces after dots', () => {
     const text = 'Here it might look like an e-mail to @user.It is just a typo!';
 
@@ -67,6 +76,23 @@ describe('mentionParser', () => {
     expect(mentionToken.content).to.equal('@user');
     expect(linkTokens[1].content).to.equal('website of ');
   });
+
+  it('does not parse mentions in autolinks', () => {
+    const text = '<ssh://user@localhost>';
+
+    const mentionTokens = findMentionTokens(md.parse(text));
+
+    expect(mentionTokens.length).to.equal(0);
+  });
+
+  it('parses mentions in html since it\'s turned off', () => {
+    const text = '<bar attr="@user">';
+
+    const token = findMentionTokens(md.parse(text))[0];
+
+    expect(token.type).to.equal('mention');
+    expect(token.content).to.equal('@user');
+ });
 
   // issue: https://github.com/HabitRPG/habitica/issues/10924
   it('does not parse mentions in urls', () => {
