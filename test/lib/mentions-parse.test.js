@@ -38,6 +38,15 @@ describe('mentionParser', () => {
     expect(mentionTokens.length).to.equal(0);
   });
 
+  it('parses mentions in e-mail addresses with underscore', () => {
+    const text = 'please contact@_user_.I think I missed some spaces';
+
+    const token = findMentionTokens(md.parse(text))[0];
+
+    expect(token.type).to.equal('mention');
+    expect(token.content).to.equal('@_user_');
+  });
+
   it('does parse mentions before forgotten spaces after dots', () => {
     const text = 'Here it might look like an e-mail to @user.It is just a typo!';
 
@@ -61,7 +70,7 @@ describe('mentionParser', () => {
 
   // issue: https://github.com/HabitRPG/habitica/issues/10924
   it('does not parse mentions in urls', () => {
-    const text = 'http://medium.com/@user/awesome-blog-post-we-all-should-read';
+    const text = 'http://noblogsite.com/@user/awesome-blog-post-we-all-should-read';
 
     const mentionTokens = findMentionTokens(md.parse(text));
 
