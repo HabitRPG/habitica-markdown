@@ -104,7 +104,7 @@ describe('mentionParser', () => {
   });
 
   it('parses mentions directly after urls that are only domain names', () => {
-    const text = 'www.google.amsterdam@user';
+    const text = 'www.google.com@user';
 
     const mentionTokens = findMentionTokens(md.parse(text));
 
