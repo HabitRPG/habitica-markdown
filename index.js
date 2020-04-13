@@ -4,6 +4,7 @@ const linkAttributesPlugin = require('markdown-it-link-attributes');
 const emojiPlugin = require('habitica-markdown-emoji');
 
 var parseMentions = require('./lib/mentions-parse');
+var renderMentions = require('./lib/mentions-render');
 
 function createMdInstance (options) {
   const mdOptions = options || {};
@@ -24,6 +25,7 @@ function createMdInstance (options) {
     .use(emojiPlugin);
 
   md.inline.ruler.push('mentions', parseMentions);
+  md.renderer.rules.mention = renderMentions;
   return md;
 }
 
