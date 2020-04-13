@@ -34,8 +34,8 @@ const mdUnsafe = createMdInstance({
   html: true,
 });
 
-md.unsafeHTMLRender = function unsafeHTMLRender (markdown) {
-  return mdUnsafe.render(markdown);
+md.unsafeHTMLRender = function unsafeHTMLRender (markdown, env) {
+  return mdUnsafe.render(markdown, env);
 };
 
 module.exports = md;
