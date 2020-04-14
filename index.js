@@ -3,8 +3,7 @@ const linkifyImagesPlugin = require('markdown-it-linkify-images');
 const linkAttributesPlugin = require('markdown-it-link-attributes');
 const emojiPlugin = require('habitica-markdown-emoji');
 
-var parseMentions = require('./lib/mentions-parse');
-var renderMentions = require('./lib/mentions-render');
+var mentionsPlugin = require('./lib/mentionsPlugin');
 
 function createMdInstance (options) {
   const mdOptions = options || {};
@@ -22,10 +21,9 @@ function createMdInstance (options) {
       linkClass: 'markdown-img-link',
       imgClass: 'markdown-img',
     })
-    .use(emojiPlugin);
+    .use(emojiPlugin)
+    .use(mentionsPlugin);
 
-  md.inline.ruler.push('mentions', parseMentions);
-  md.renderer.rules.mention = renderMentions;
   return md;
 }
 
