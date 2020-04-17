@@ -5,9 +5,9 @@
   "main": "index.js",
   "scripts": {
     "build": "npm install --force && node tasks/build.js && npm run minify",
-    "minify": "uglifyjs dist/habitica-markdown.js > dist/habitica-markdown.min.js",
+    "minify": "terser dist/habitica-markdown.js -o dist/habitica-markdown.min.js",
     "lint": "eslint .",
-    "test": "npm run lint && mocha --require @babel/register"
+    "test": "npm run lint && mocha"
   },
   "repository": {
     "type": "git",
@@ -31,13 +31,9 @@
     "eslint-config-habitrpg": "^6.2.0",
     "eslint-plugin-mocha": "^6.3.0",
     "mocha": "^7.1.1",
-    "uglify-js": "^3.9.1"
+    "terser": "^4.6.11"
   },
   "dependencies": {
-    "@babel/cli": "^7.8.4",
-    "@babel/core": "^7.9.0",
-    "@babel/preset-env": "^7.9.5",
-    "@babel/register": "^7.9.0",
     "browserify": "^16.5.1",
     "chalk": "^4.0.0",
     "habitica-markdown-emoji": "1.2.4",

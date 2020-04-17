@@ -1,7 +1,7 @@
-import markdownit from 'markdown-it';
-import linkifyImagesPlugin from 'markdown-it-linkify-images';
-import linkAttributesPlugin from 'markdown-it-link-attributes';
-import emojiPlugin from 'habitica-markdown-emoji';
+const markdownit = require('markdown-it');
+const linkifyImagesPlugin = require('markdown-it-linkify-images');
+const linkAttributesPlugin = require('markdown-it-link-attributes');
+const emojiPlugin = require('habitica-markdown-emoji');
 
 function createMdInstance (options) {
   const mdOptions = options || {};
@@ -33,4 +33,4 @@ md.unsafeHTMLRender = function unsafeHTMLRender (markdown) {
   return mdUnsafe.render(markdown);
 };
 
-export default md;
+module.exports = md;

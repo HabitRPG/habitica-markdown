@@ -3,6 +3,7 @@
     "habitrpg/lib/mocha",
   ],
   "rules": {
-    "mocha/no-mocha-arrows": 'off'
+    "mocha/no-mocha-arrows": 'off',
+    "import/no-commonjs": 'off',
   }
 }

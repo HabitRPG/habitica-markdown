@@ -1,4 +1,4 @@
-/* eslint-disable import/no-commonjs, no-console */
+/* eslint-disable no-console */
 
 const fs = require('fs');
 const chalk = require('chalk');

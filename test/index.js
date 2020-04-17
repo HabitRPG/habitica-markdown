@@ -1,5 +1,5 @@
-import { expect } from 'chai';
-import md from '..';
+const { expect } = require('chai');
+const md = require('..');
 
 function runTestsForBothRenderMethods (render) {
   it('renders links with target="_blank" and rel="noopener"', () => {

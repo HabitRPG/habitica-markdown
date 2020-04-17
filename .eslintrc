@@ -1,3 +1,6 @@
 {
-  "extends": "habitrpg/lib/node"
+  "extends": "habitrpg/lib/node",
+  "rules": {
+      "import/no-commonjs": "off",
+  }
 }
