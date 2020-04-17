@@ -1,6 +1,8 @@
 {
   "extends": [
-    "habitrpg/mocha",
-    "habitrpg/esnext"
-  ]
+    "habitrpg/lib/mocha",
+  ],
+  "rules": {
+    "mocha/no-mocha-arrows": 'off'
+  }
 }

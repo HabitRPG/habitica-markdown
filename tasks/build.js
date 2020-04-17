@@ -1,17 +1,17 @@
-'use strict';
-/* eslint-disable no-console */
+/* eslint-disable import/no-commonjs, no-console */
 
-var pkg = require('../package.json');
-var fs = require('fs');
-var chalk = require('chalk');
-var rm = require('rimraf').sync;
-var browserify = require('browserify');
+const fs = require('fs');
+const chalk = require('chalk');
+const rm = require('rimraf').sync;
+const browserify = require('browserify');
 
-var PACKAGE_NAME = pkg.name;
-var PACKAGE_VERSION = pkg.version;
-var DIST_PATH = './dist/' + PACKAGE_NAME + '.js';
+const pkg = require('../package.json');
 
-console.log(chalk.yellow('Beginning build process for ' + PACKAGE_NAME + ' version v' + PACKAGE_VERSION));
+const PACKAGE_NAME = pkg.name;
+const PACKAGE_VERSION = pkg.version;
+const DIST_PATH = `./dist/${PACKAGE_NAME}.js`;
+
+console.log(chalk.yellow(`Beginning build process for ${PACKAGE_NAME} version v${PACKAGE_VERSION}`));
 
 console.log(chalk.gray('Removing dist directory and recreating it'));
 
@@ -24,14 +24,14 @@ fs.mkdirSync('./dist');
 console.log(chalk.green('The dist directory was created'));
 
 console.log(chalk.gray('Bunding files with browserify'));
-var distStream = fs.createWriteStream(DIST_PATH);
+const distStream = fs.createWriteStream(DIST_PATH);
 
-distStream.on('error', function onStreamError (err) {
+distStream.on('error', err => {
   console.error(chalk.red('There was a problem in the dist stream'));
   console.error(err);
 });
 
-var b = browserify({
+const b = browserify({
   standalone: 'habitica-markdown',
 });
 
