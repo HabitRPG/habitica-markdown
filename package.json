@@ -4,8 +4,7 @@
   "description": "A markdown-it module pre-configured for use in Habitica",
   "main": "index.js",
   "scripts": {
-    "build": "npm install --force && node tasks/build.js && npm run minify",
-    "minify": "terser dist/habitica-markdown.js -o dist/habitica-markdown.min.js",
+    "build": "npm install --force && webpack --config webpack.config.js --mode=${TARGET_ENV:-development}",
     "lint": "eslint .",
     "test": "npm run lint && mocha"
   },
@@ -31,15 +30,13 @@
     "eslint-config-habitrpg": "^6.2.0",
     "eslint-plugin-mocha": "^6.3.0",
     "mocha": "^7.1.1",
-    "terser": "^4.6.11"
+    "webpack": "^4.42.1",
+    "webpack-cli": "^3.3.11"
   },
   "dependencies": {
-    "browserify": "^16.5.1",
-    "chalk": "^4.0.0",
     "habitica-markdown-emoji": "1.2.4",
     "markdown-it": "10.0.0",
     "markdown-it-link-attributes": "3.0.0",
-    "markdown-it-linkify-images": "^1.1.1",
-    "rimraf": "^3.0.2"
+    "markdown-it-linkify-images": "^1.1.1"
   }
 }
