@@ -3,7 +3,7 @@ const linkifyImagesPlugin = require('markdown-it-linkify-images');
 const linkAttributesPlugin = require('markdown-it-link-attributes');
 const emojiPlugin = require('habitica-markdown-emoji');
 
-var mentionsPlugin = require('./lib/mentionsPlugin');
+const mentionsPlugin = require('./lib/mentionsPlugin');
 
 function createMdInstance (options) {
   const mdOptions = options || {};
@@ -41,7 +41,7 @@ md.unsafeHTMLRender = function unsafeHTMLRender (markdown, env) {
  */
 function isLinkOrEmail (text) {
   // Using match i.o. test since test is approximation only (Doesn't discard www.google.com@user)
-  var match = md.linkify.match(text);
+  const match = md.linkify.match(text);
   return match && match[0].text === text;
 }
 
