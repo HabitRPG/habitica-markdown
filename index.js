@@ -1,18 +1,18 @@
-'use strict';
-
-var markdownit = require('markdown-it');
-var linkifyImagesPlugin = require('markdown-it-linkify-images');
-var linkAttributesPlugin = require('markdown-it-link-attributes');
-var emojiPlugin = require('habitica-markdown-emoji');
+const markdownit = require('markdown-it');
+const linkifyImagesPlugin = require('markdown-it-linkify-images');
+const linkAttributesPlugin = require('markdown-it-link-attributes');
+const emojiPlugin = require('habitica-markdown-emoji');
 
 function createMdInstance (options) {
-  options = options || {};
-  options.linkify = options.linkify || true;
+  const mdOptions = options || {};
+  mdOptions.linkify = mdOptions.linkify || true;
 
-  var md = markdownit(options)
+  const md = markdownit(mdOptions)
     .use(linkAttributesPlugin, {
-      target: '_blank',
-      rel: 'noopener',
+      attrs: {
+        target: '_blank',
+        rel: 'noopener',
+      },
     })
     .use(linkifyImagesPlugin, {
       target: '_blank',
@@ -24,8 +24,8 @@ function createMdInstance (options) {
   return md;
 }
 
-var md = createMdInstance();
-var mdUnsafe = createMdInstance({
+const md = createMdInstance();
+const mdUnsafe = createMdInstance({
   html: true,
 });
 
