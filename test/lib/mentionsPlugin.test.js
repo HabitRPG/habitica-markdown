@@ -1,6 +1,7 @@
 const { expect } = require('chai');
 const { findMentionTokens, findAllTokenTypes } = require('../helper');
-const md = require('../..');
+const md = require('../../lib/withMentions');
+const unsafe = require('../../lib/unsafe');
 
 describe('mentionsPlugin', () => {
   describe('mentionParser', () => {
@@ -224,7 +225,7 @@ describe('mentionsPlugin', () => {
     it('does not render spans in html when rendering with html enabled', () => {
       const text = '<bar attr="@user">';
 
-      const result = md.unsafeHTMLRender(text);
+      const result = unsafe.render(text);
 
       expect(result).to.equal('<bar attr="@user">');
     });

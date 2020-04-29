@@ -1,10 +1,14 @@
 const path = require('path');
 
 module.exports = {
-  entry: './index.js',
+  entry: {
+    index: './index.js',
+    unsafe: './lib/unsafe.js',
+    withMentions: './lib/withMentions.js',
+  },
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: 'habitica-markdown.js',
+    filename: 'habitica-markdown.[name].js',
     library: 'habiticaMarkdown',
     libraryTarget: 'umd',
   },
