@@ -1,7 +1,7 @@
 const createMdInstance = require('./lib/util/createMdInstance');
 
-const withMentions = require('./lib/withMentions');
-const unsafe = require('./lib/unsafe');
+const withMentions = require('./withMentions');
+const unsafe = require('./unsafe');
 
 const md = createMdInstance();
 

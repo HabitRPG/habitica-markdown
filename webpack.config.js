@@ -3,8 +3,8 @@ const path = require('path');
 module.exports = {
   entry: {
     index: './index.js',
-    unsafe: './lib/unsafe.js',
-    withMentions: './lib/withMentions.js',
+    unsafe: './unsafe.js',
+    withMentions: './withMentions.js',
   },
   output: {
     path: path.resolve(__dirname, 'dist'),

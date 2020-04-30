@@ -1,7 +1,7 @@
 const { expect } = require('chai');
 const { findMentionTokens, findAllTokenTypes } = require('../helper');
-const md = require('../../lib/withMentions');
-const unsafe = require('../../lib/unsafe');
+const md = require('../../withMentions');
+const unsafe = require('../../unsafe');
 
 describe('mentionsPlugin', () => {
   describe('mentionParser', () => {
