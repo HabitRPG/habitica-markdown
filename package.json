@@ -1,13 +1,13 @@
 {
   "name": "habitica-markdown",
-  "version": "1.4.0",
+  "version": "2.0.0",
   "description": "A markdown-it module pre-configured for use in Habitica",
   "main": "index.js",
   "scripts": {
     "build": "npm install --force && webpack --config webpack.config.js --mode=${TARGET_ENV:-production}",
     "build:dev": "TARGET_ENV=development npm run build",
     "lint": "eslint .",
-    "test": "npm run lint && mocha"
+    "test": "npm run lint && mocha --recursive"
   },
   "repository": {
     "type": "git",
