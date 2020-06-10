@@ -222,6 +222,15 @@ describe('mentionsPlugin', () => {
       expect(result).to.equal('<p>There are no mentions here!</p>\n');
     });
 
+    // Habitica issue https://github.com/HabitRPG/habitica/issues/12272
+    it('doesn\'t render spans for preceding @ signs', () => {
+      const text = 'There are multiple @ signs @ this text before a @mention!';
+
+      const result = md.render(text);
+
+      expect(result).to.equal('<p>There are multiple @ signs @ this text before a <span class="at-text">@mention</span>!</p>\n');
+    });
+
     it('does not render spans in html when rendering with html enabled', () => {
       const text = '<bar attr="@user">';
 
