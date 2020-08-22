@@ -39,6 +39,14 @@ describe('mentionsPlugin', () => {
       expect(mentionTokens.length).to.equal(0);
     });
 
+    it('does not parse mentions in e-mail addresses ending in punctuation', () => {
+      const text = 'send an e-mail to nevermind@user.com!';
+
+      const mentionTokens = findMentionTokens(md.parse(text));
+
+      expect(mentionTokens.length).to.equal(0);
+    });
+
     it('parses mentions in e-mail addresses with underscore', () => {
       const text = 'please contact@_user_.I think I missed some spaces';
 
