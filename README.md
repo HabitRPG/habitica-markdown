@@ -30,7 +30,6 @@ Habitica Markdown comes pre-configured with
 * Links open in new windows with [markdown-it-link-attributes](https://www.npmjs.com/package/markdown-it-link-attributes)
 * Images automatically turn into links with [markdown-it-linkify-images](https://www.npmjs.com/package/markdown-it-linkify-images)
 * Emojis parsed by [habitica-markdown-emoji](https://www.npmjs.com/package/habitica-markdown-emoji)
-* An `isLinkOrEmail` method that uses markdown-it's embedded [linkify](https://soapbox.github.io/linkifyjs/) to check whether a string is a link or e-mail address.
 
 ## Notes
 
