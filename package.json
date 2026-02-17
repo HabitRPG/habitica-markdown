@@ -1,6 +1,6 @@
 {
   "name": "habitica-markdown",
-  "version": "3.0.0",
+  "version": "4.0.0",
   "description": "A markdown-it module pre-configured for use in Habitica",
   "main": "index.js",
   "scripts": {
@@ -35,9 +35,9 @@
     "webpack-cli": "^3.3.11"
   },
   "dependencies": {
-    "habitica-markdown-emoji": "1.2.4",
-    "markdown-it": "10.0.0",
-    "markdown-it-link-attributes": "3.0.0",
-    "markdown-it-linkify-images": "^1.1.1"
+    "markdown-it": "^14.0.0",
+    "markdown-it-emoji": "^2.0.2",
+    "markdown-it-link-attributes": "^4.0.1",
+    "markdown-it-linkify-images": "^3.0.0"
   }
 }

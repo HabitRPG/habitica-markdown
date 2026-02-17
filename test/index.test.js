@@ -14,22 +14,22 @@ function runTestsForBothRenderMethods (render) {
     expect(result).to.contain('<a href="https://example.com/image.png" class="markdown-img-link" target="_blank"><img src="https://example.com/image.png" alt="image" class="markdown-img"></a>');
   });
 
-  it('renders text emoji (:smile:) from s3', () => {
+  it('renders text emoji (:smile:) as Unicode', () => {
     const result = md[render]('foo :smile: bar');
 
-    expect(result).to.contain('foo <img class="habitica-emoji" style="height: 1.5em; width: 1.5em" src="https://s3.amazonaws.com/habitica-assets/cdn/emoji/smile.png" alt="smile"> bar');
-  });
-
-  it('renders unicode emoji from s3', () => {
-    const result = md[render]('foo 👍 bar');
-
-    expect(result).to.contain('foo <img class="habitica-emoji" style="height: 1.5em; width: 1.5em" src="https://s3.amazonaws.com/habitica-assets/cdn/emoji/thumbsup.png" alt="thumbsup"> bar');
+    expect(result).to.contain('foo 😄 bar');
   });
 
   it('does not render shortcut text emojis', () => {
     const result = md[render]('foo :) bar');
 
     expect(result).to.contain('foo :) bar');
+  });
+
+  it('renders melior emoji as img', () => {
+    const result = md[render]('foo :melior: bar');
+
+    expect(result).to.contain('foo <img class="habitica-emoji" style="height: 1.5em; width: 1.5em" src="https://s3.amazonaws.com/habitica-assets/cdn/emoji/melior.png" alt="melior"> bar');
   });
 }
 
